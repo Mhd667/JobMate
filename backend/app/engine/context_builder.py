@@ -18,7 +18,9 @@ from app.intelligence import contracts as c
 STATUS_WEIGHT = {"fact": 1.0, "inference": 0.7, "hypothesis": 0.35, "unknown": 0.0}
 
 COMPANY_FIELDS = ["mission", "business_model", "culture", "management_style"]
-ROLE_FIELDS = ["mission", "objectives", "responsibilities", "constraints", "stakeholders", "success_factors"]
+# What the conversation must establish before the search can start (spec: ask only what changes the search).
+ROLE_FIELDS = ["mission", "responsibilities", "success_factors", "languages", "availability"]
+ROLE_READY_FIELDS = ["mission", "responsibilities", "success_factors"]
 CANDIDATE_FIELDS = ["career_direction", "strengths", "professional_goals", "preferences", "constraints", "aspirations"]
 
 _IDENT_EXCLUDE = {"id", "created_at", "updated_at", "company_id", "role_id", "candidate_id"}
@@ -73,7 +75,8 @@ class ContextBuilder:
 
     def role(self, role_id) -> c.RoleView:
         r = self.db.get(m.Role, role_id)
-        return c.RoleView(id=str(r.id), title=r.title, location=r.location, constraints=r.constraints or {},
+        return c.RoleView(id=str(r.id), title=r.title, location=r.location, contract_type=r.contract_type,
+                          duration=r.duration, constraints=r.constraints or {},
                           identity=_ident(current(self.db, m.RoleIdentity, r.id)),
                           success_model=self.success_model(r.id))
 
@@ -124,10 +127,12 @@ class ContextBuilder:
 
     # ------------------------------------------------------------------ dialogue
     def missing_company_role_fields(self, company: c.CompanyView, role: c.RoleView | None) -> list[str]:
-        miss = [f"company.{f}" for f in COMPANY_FIELDS if not company.identity.get(f)]
-        if role:
-            miss += [f"role.{f}" for f in ROLE_FIELDS if not role.identity.get(f)]
-        return miss
+        miss = [f"role.{f}" for f in ROLE_FIELDS if role and not role.identity.get(f)]
+        return miss + [f"company.{f}" for f in COMPANY_FIELDS if not company.identity.get(f)]
+
+    @staticmethod
+    def role_ready(role: c.RoleView) -> bool:
+        return all(role.identity.get(f) for f in ROLE_READY_FIELDS)
 
     def missing_candidate_fields(self, cand: c.CandidateView) -> list[str]:
         return [f"candidate.{f}" for f in CANDIDATE_FIELDS if not cand.identity.get(f)]

@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,7 @@ from app.api.access import my_candidate, own_role, readable_candidate, writable_
 from app.auth.deps import with_role as current_user, employer
 from app.db import get_db
 from app.engine import pipeline
+from app.engine.documents import extract_text
 from app.engine.context_builder import ContextBuilder
 from app.engine.registry import current, new_version
 
@@ -41,6 +43,38 @@ def list_candidates(user=Depends(employer), db: Session = Depends(get_db)):
 @router.get("/candidates/me", response_model=s.CandidateProfileOut)
 def my_profile(user=Depends(current_user), db: Session = Depends(get_db)):
     return _profile(db, my_candidate(db, user))
+
+
+MAX_CV_BYTES = 5 * 1024 * 1024
+
+
+@router.post("/candidates/me/sources", response_model=s.CandidateOut)
+def add_source(body: s.SourceIn, user=Depends(current_user), db: Session = Depends(get_db)):
+    """LinkedIn / portfolio link shared by the candidate. Stored as an unverified link: never scraped."""
+    cand = my_candidate(db, user)
+    others = [x for x in (cand.sources or []) if x.get("kind") != body.kind or body.kind == "other"]
+    cand.sources = others + [{"kind": body.kind, "url": body.url,
+                              "added_at": datetime.now(timezone.utc).isoformat(), "verified": False}]
+    db.flush()
+    return cand
+
+
+@router.post("/candidates/me/cv", response_model=s.CandidateOut)
+async def upload_cv(file: UploadFile = File(...), user=Depends(current_user), db: Session = Depends(get_db)):
+    """CV upload (PDF, DOCX or TXT, 5 MB max). Only the extracted text and the file name are kept."""
+    cand = my_candidate(db, user)
+    raw = await file.read()
+    if len(raw) > MAX_CV_BYTES:
+        raise HTTPException(413, "CV trop volumineux (5 Mo maximum).")
+    try:
+        text = extract_text(file.filename or "", raw)
+    except ValueError as e:
+        raise HTTPException(415, str(e)) from e
+    if len(text.strip()) < 30:
+        raise HTTPException(422, "Je n'arrive pas à lire le texte de ce CV (un PDF scanné ?). Essayez un PDF texte ou un DOCX.")
+    cand.cv_text, cand.cv_filename = text, (file.filename or "cv")[:255]
+    db.flush()
+    return cand
 
 
 def _profile(db: Session, cand: m.Candidate) -> s.CandidateProfileOut:

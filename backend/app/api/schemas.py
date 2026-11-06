@@ -26,6 +26,8 @@ class SignupIn(BaseModel):
 class RoleChoiceIn(BaseModel):
     role: Literal["employer", "candidate"]
     phone_number: str | None = None
+    full_name: str | None = Field(None, description="candidate: name shown to employers")
+    company_name: str | None = Field(None, description="employer: company name (can be given later in the chat)")
 
 
 class LoginIn(BaseModel):
@@ -189,6 +191,8 @@ class CandidateOut(Out):
     headline: str | None
     location: str | None
     availability: dict
+    cv_filename: str | None = None
+    sources: list[dict] = Field(default_factory=list)
     status: str
     created_at: datetime
 
@@ -464,12 +468,44 @@ class MessageOut(Out):
     created_at: datetime
 
 
+class CardActionOut(BaseModel):
+    id: str
+    label: str
+    style: str = "secondary"
+
+
+class CardOut(BaseModel):
+    id: str
+    type: Literal["missions", "role_summary", "success_model", "candidates", "next_steps", "confrontation",
+                  "recommendation", "sources", "offer", "assessment"]
+    status: Literal["open", "done"] = "open"
+    data: dict
+    actions: list[CardActionOut] = Field(default_factory=list)
+    result: dict | None = None
+
+
 class TurnOut(BaseModel):
     user_message: MessageOut
     assistant_message: MessageOut
     intent: str
     updates: list[dict] = Field(description="identity objects updated by this turn, e.g. role_identity")
     artifacts: list[dict] = Field(description="objects produced (success_model, shortlist, confrontation...)")
+    cards: list[CardOut] = Field(default_factory=list, description="cards to render under the assistant message")
+    flow_state: str | None = Field(None, description="employer: discovery|missions|role_summary|results|"
+                                                    "confrontation|recommendation; candidate: profile|sources|"
+                                                    "assessment|waiting")
+
+
+class ActionIn(BaseModel):
+    card_id: str
+    action: str = Field(description="one of the card's actions[].id, e.g. missions.submit, candidate.hire")
+    payload: dict = Field(default_factory=dict, description="missions.submit: {selected: [...], other?}; "
+                                                            "candidate.*: {candidate_id}")
+
+
+class SourceIn(BaseModel):
+    kind: Literal["linkedin", "portfolio", "other"]
+    url: str = Field(pattern=r"^https?://", max_length=500)
 
 
 class ConversationDetailOut(ConversationOut):

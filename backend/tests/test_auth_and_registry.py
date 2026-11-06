@@ -52,10 +52,9 @@ def test_role_choice_flow(demo):
     assert me["user"]["role"] is None and me["next_step"] == "choose_role"
     assert client.get("/companies", headers=h).status_code == 409          # no role yet
     me = client.post("/auth/role", headers=h, json={"role": "employer", "phone_number": "+221701112233"}).json()
-    assert me["user"]["role"] == "employer" and me["next_step"] == "create_company"
+    # The company is created with the role choice: the employer lands directly in the chat.
+    assert me["user"]["role"] == "employer" and me["next_step"] == "employer_home" and me["company_id"]
     assert client.post("/auth/role", headers=h, json={"role": "candidate"}).status_code == 409
-    client.post("/companies", headers=h, json={"name": "Acme"})
-    assert client.get("/auth/me", headers=h).json()["next_step"] == "employer_home"
 
 
 def test_no_llm_means_explicit_503_not_invented_output(demo, monkeypatch):

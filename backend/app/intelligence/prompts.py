@@ -17,11 +17,19 @@ et un candidat à se représenter professionnellement. Règles non négociables 
 
 TASKS: dict[str, str] = {
     "employer_turn": """Tâche : conduire la conversation avec l'employeur pour comprendre l'entreprise et le poste.
-- Extrais de son message ce qui enrichit l'identité de l'entreprise (company_identity_patch) et du poste
-  (role_identity_patch). Ne remplis que les champs réellement informés par le message.
-- Mets dans `unknowns` ce qui reste à clarifier et dans `assumptions` ce que tu supposes.
-- Réponds naturellement (reply) : reformule brièvement ce que tu as compris puis pose UNE question,
-  la plus utile pour la décision de recrutement (voir missing_fields). Pas de formulaire RH.
+L'employeur écrit librement (ex. « notre commercial part en congé maternité, poste vacant 6 mois »).
+- Extrais de son message ce qui enrichit le poste : role_basics (intitulé, type de contrat, durée, lieu),
+  role_identity_patch (mission, missions/responsabilités, critères de réussite, langues, disponibilité,
+  priorité = elevee si c'est urgent) et, s'il en parle, l'entreprise (company_basics, company_identity_patch).
+  Ne remplis que les champs réellement informés. Mets le reste dans `unknowns`, tes suppositions dans `assumptions`.
+- Réponds en 1 à 3 phrases courtes : reformule brièvement, puis demande UNE précision seulement si elle change
+  la recherche (voir missing_fields). Pas de formulaire RH.
+- Si les missions principales ne sont pas encore claires, ne les demande pas en texte libre : remplis
+  mission_question (ex. « Quelles sont les principales missions sur le call center ? ») et mission_options
+  (3 à 7 missions concrètes adaptées au poste, ex. « Appels entrants », « Vente / conversion »). L'interface
+  affichera une carte à cocher.
+- ready_for_search = true dès que tu connais l'intitulé, la mission, les missions principales et ce qui fait
+  réussir dans ce poste. Dans ce cas, annonce que tu lances la recherche des meilleurs profils.
 - Détecte l'intention : s'il demande de comparer / confronter des candidats -> request_confrontation,
   de recommander -> request_recommendation, un top 3 / une shortlist -> request_shortlist,
   d'analyser les candidats -> request_matching, de construire le modèle de réussite -> request_success_model.
@@ -45,7 +53,10 @@ capacités critiques -> comportements requis -> preuves observables.
     "understand_candidate": """Tâche : à partir des expériences / CV / identité, identifier les capacités du candidat et les preuves.
 - Utilise de préférence les keys du capability_vocabulary.
 - Chaque preuve relie une affirmation (claim) à un élément concret (evidence) avec source et statut.
-  Une compétence simplement listée dans un CV est au mieux une inference à faible confiance.""",
+  Une compétence simplement listée dans un CV est au mieux une inference à faible confiance.
+- Le texte du CV (cv_text) a pour source "cv". Les liens (sources : LinkedIn, portfolio) ne sont pas lus :
+  ne déduis rien de leur contenu, note seulement leur existence si utile.
+- Si le CV le permet, remplis identity_patch.summary avec un résumé factuel du parcours.""",
 
     "next_assessment": """Tâche : choisir la prochaine question / le prochain test pour CE candidat sur CE poste.
 Regarde la couverture (coverage) : ce qui est déjà connu, ce qui reste incertain, et choisis l'information
@@ -64,7 +75,9 @@ qui améliorerait le plus la décision de recrutement (capacité critique, faibl
 - fit_dimensions : une par capacité du Success Model (+ disponibilité / contraintes si pertinent),
   avec level et evidence_ids repris du contexte.
 - satisfied_conditions : noms des success_conditions dont toutes les capacités sont au moins moderate.
-- ui_score est purement indicatif pour l'interface ; le raisonnement est dans le reste.""",
+- ui_score est purement indicatif pour l'interface ; le raisonnement est dans le reste.
+- candidate_explanation : 2 à 3 phrases adressées au candidat (vouvoiement) qui expliquent concrètement
+  pourquoi ce poste lui correspond, sans révéler d'information sur les autres candidats.""",
 
     "shortlist": """Tâche : sélectionner les k finalistes. Pour chacun, explique pourquoi il est dans la shortlist
 (au regard du Success Model et des preuves), et pour les exclus, pourquoi ils ne le sont pas.""",

@@ -1,0 +1,111 @@
+"""Chat-card protocol: the employer and candidate journeys of the UX spec, end to end (heuristic layer)."""
+
+
+def _send(client, h, conv_id, text):
+    r = client.post(f"/conversations/{conv_id}/messages", headers=h, json={"content": text})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _act(client, h, conv_id, card, action, payload=None):
+    r = client.post(f"/conversations/{conv_id}/actions", headers=h,
+                    json={"card_id": card["id"], "action": action, "payload": payload or {}})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def _card(turn, type_):
+    found = [c for c in turn["cards"] if c["type"] == type_]
+    assert found, f"no {type_} card in {[c['type'] for c in turn['cards']]}"
+    return found[0]
+
+
+def test_employer_and_candidate_journeys(demo):
+    client, ids, login = demo
+    emp = login("employer@jobmate.demo")
+    conv = client.post("/conversations", headers=emp, json={"kind": "employer"}).json()
+    assert conv["role_id"] and conv["messages"][0]["content"].startswith("Bonjour, je suis JobMate")
+    cid = conv["id"]
+
+    _send(client, emp, cid, "Notre commerciale part en congé maternité, poste vacant 6 mois.")
+    turn = _send(client, emp, cid, "Garder nos commerçants actifs et en signer de nouveaux.")
+    missions = _card(turn, "missions")
+    assert turn["flow_state"] == "missions" and missions["data"]["options"]
+
+    turn = _act(client, emp, cid, missions, "missions.submit", {"selected": missions["data"]["options"][:2],
+                                                                "other": "Relances"})
+    assert turn["user_message"]["content"].startswith("Missions principales")
+    # the missions card is closed in the history
+    hist = client.get(f"/conversations/{cid}", headers=emp).json()["messages"]
+    assert any(c["status"] == "done" for msg in hist for c in msg["meta"].get("cards", []))
+
+    turn = _send(client, emp, cid, "Les meilleurs restent calmes face à un commerçant en colère et savent convaincre.")
+    for _ in range(3):  # languages, availability... until the summary appears
+        if turn["cards"]:
+            break
+        turn = _send(client, emp, cid, "Français et wolof, dès que possible.")
+    summary = _card(turn, "role_summary")
+    assert "Relances" in summary["data"]["missions"] and summary["data"]["criteria"]
+
+    turn = _act(client, emp, cid, summary, "role_summary.confirm")
+    assert turn["flow_state"] == "results"
+    cands = _card(turn, "candidates")["data"]["candidates"]
+    _card(turn, "success_model")
+    panel = _card(turn, "next_steps")
+    assert 1 <= len(cands) <= 3 and all(c["match_score"] is not None and c["name"] for c in cands)
+
+    top = cands[0]
+    turn = _act(client, emp, cid, _card(turn, "candidates"), "candidate.interview", {"candidate_id": top["candidate_id"]})
+    assert turn["intent"] == "employer_decision"
+    turn = _act(client, emp, cid, panel, "next.refine")
+    assert turn["flow_state"] == "discovery"
+
+    # Confrontation and recommendation on request; the human still decides.
+    turn = _send(client, emp, cid, "Compare-moi les trois finalistes")
+    conf = _card(turn, "confrontation")
+    turn = _act(client, emp, cid, conf, "recommend")
+    rec = _card(turn, "recommendation")
+    assert rec["data"]["summary"]
+
+    # The shortlisted candidate got the offer in their own chat.
+    email = {"Aminata Diallo": "aminata", "Ousmane Ndiaye": "ousmane", "Fatou Sow": "fatou",
+             "Moussa Fall": "moussa", "Khady Ba": "khady"}[top["name"]] + "@jobmate.demo"
+    ch = login(email)
+    convs = client.get("/conversations", headers=ch).json()
+    detail = client.get(f"/conversations/{convs[0]['id']}", headers=ch).json()
+    offers = [c for msg in detail["messages"] for c in msg["meta"].get("cards", []) if c["type"] == "offer"]
+    assert offers and offers[0]["data"]["explanation"] is not None
+    assert any("entretien" in msg["content"] for msg in detail["messages"])
+
+    turn = _act(client, ch, detail["id"], offers[0], "offer.interested")
+    q1 = _card(turn, "assessment")
+    assert turn["flow_state"] == "assessment" and q1["data"]["index"] == 1 and q1["data"]["total"] == 2
+    turn = _send(client, ch, detail["id"], "Je l'ai écouté, reformulé son problème, puis proposé une solution "
+                                           "concrète et rappelé le lendemain : il est resté client.")
+    assert _card(turn, "assessment")["data"]["index"] == 2
+    turn = _send(client, ch, detail["id"], "Je commence par comprendre son activité, puis je montre ce qu'il gagne.")
+    assert turn["flow_state"] == "waiting" and not turn["cards"]
+    prof = client.get("/candidates/me", headers=ch).json()
+    assert all(e["epistemic_status"] != "fact" for e in prof["evidence"] if e["source"] == "assessment")
+
+
+def test_candidate_sources_card_and_cv_upload(demo):
+    client, _, _ = demo
+    tok = client.post("/auth/signup", json={"email": "awa2@t.io", "password": "password1"}).json()["access_token"]
+    h = {"Authorization": f"Bearer {tok}"}
+    me = client.post("/auth/role", headers=h, json={"role": "candidate", "full_name": "Awa Mbaye"}).json()
+    assert me["next_step"] == "candidate_home"
+    conv = client.post("/conversations", headers=h, json={"kind": "candidate"}).json()
+    _send(client, h, conv["id"], "Je cherche un poste de commerciale en fintech à Dakar.")
+    turn = _send(client, h, conv["id"], "Je sais convaincre et je reste calme avec les clients difficiles.")
+    src = _card(turn, "sources")
+    assert client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "javascript:x"}).status_code == 422
+    r = client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "https://linkedin.com/in/awa"})
+    assert r.status_code == 200 and r.json()["sources"][0]["verified"] is False
+    cv = ("Awa Mbaye, commerciale terrain chez Wave (2022-2025). Ouverture de 120 comptes marchands, "
+          "gestion des réclamations, formation des agents.").encode()
+    r = client.post("/candidates/me/cv", headers=h, files={"file": ("cv.txt", cv, "text/plain")})
+    assert r.status_code == 200 and r.json()["cv_filename"] == "cv.txt"
+    assert client.post("/candidates/me/cv", headers=h, files={"file": ("cv.exe", b"x" * 40)}).status_code == 415
+    turn = _act(client, h, conv["id"], src, "sources.submit")
+    assert turn["intent"] == "sources.submit"

@@ -953,6 +953,100 @@
     ]
    }
   },
+  "/candidates/me/sources": {
+   "post": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Add Source",
+    "description": "LinkedIn / portfolio link shared by the candidate. Stored as an unverified link: never scraped.",
+    "operationId": "add_source_candidates_me_sources_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SourceIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CandidateOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/candidates/me/cv": {
+   "post": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Upload Cv",
+    "description": "CV upload (PDF, DOCX or TXT, 5 MB max). Only the extracted text and the file name are kept.",
+    "operationId": "upload_cv_candidates_me_cv_post",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_upload_cv_candidates_me_cv_post"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CandidateOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
   "/candidates/{candidate_id}": {
    "get": {
     "tags": [
@@ -2249,6 +2343,7 @@
      "conversations"
     ],
     "summary": "Start",
+    "description": "Employer: \"Nouveau recrutement\" (a draft role is created when role_id is omitted).\nCandidate: the candidate's chat. company_id defaults to the employer's own company.",
     "operationId": "start_conversations_post",
     "requestBody": {
      "content": {
@@ -2395,6 +2490,65 @@
     }
    }
   },
+  "/conversations/{conversation_id}/actions": {
+   "post": {
+    "tags": [
+     "conversations"
+    ],
+    "summary": "Act",
+    "description": "Answer a card: the click is recorded as a user message, followed by JobMate's reply (and new cards).",
+    "operationId": "act_conversations__conversation_id__actions_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "conversation_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Conversation Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ActionIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TurnOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/health": {
    "get": {
     "tags": [
@@ -2421,6 +2575,31 @@
  },
  "components": {
   "schemas": {
+   "ActionIn": {
+    "properties": {
+     "card_id": {
+      "type": "string",
+      "title": "Card Id"
+     },
+     "action": {
+      "type": "string",
+      "title": "Action",
+      "description": "one of the card's actions[].id, e.g. missions.submit, candidate.hire"
+     },
+     "payload": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Payload",
+      "description": "missions.submit: {selected: [...], other?}; candidate.*: {candidate_id}"
+     }
+    },
+    "type": "object",
+    "required": [
+     "card_id",
+     "action"
+    ],
+    "title": "ActionIn"
+   },
    "AssessmentRequestOut": {
     "properties": {
      "id": {
@@ -2600,6 +2779,20 @@
     ],
     "title": "AssessmentResponseOut"
    },
+   "Body_upload_cv_candidates_me_cv_post": {
+    "properties": {
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     }
+    },
+    "type": "object",
+    "required": [
+     "file"
+    ],
+    "title": "Body_upload_cv_candidates_me_cv_post"
+   },
    "CandidateAnalysisOut": {
     "properties": {
      "candidate_id": {
@@ -2759,6 +2952,25 @@
       "additionalProperties": true,
       "type": "object",
       "title": "Availability"
+     },
+     "cv_filename": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cv Filename"
+     },
+     "sources": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Sources"
      },
      "status": {
       "type": "string",
@@ -2920,6 +3132,93 @@
      "name"
     ],
     "title": "CapabilitySpec"
+   },
+   "CardActionOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "style": {
+      "type": "string",
+      "title": "Style",
+      "default": "secondary"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "label"
+    ],
+    "title": "CardActionOut"
+   },
+   "CardOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "missions",
+       "role_summary",
+       "success_model",
+       "candidates",
+       "next_steps",
+       "confrontation",
+       "recommendation",
+       "sources",
+       "offer",
+       "assessment"
+      ],
+      "title": "Type"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "open",
+       "done"
+      ],
+      "title": "Status",
+      "default": "open"
+     },
+     "data": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Data"
+     },
+     "actions": {
+      "items": {
+       "$ref": "#/components/schemas/CardActionOut"
+      },
+      "type": "array",
+      "title": "Actions"
+     },
+     "result": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Result"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "type",
+     "data"
+    ],
+    "title": "CardOut"
    },
    "CompanyIdentityOut": {
     "properties": {
@@ -5018,6 +5317,30 @@
        }
       ],
       "title": "Phone Number"
+     },
+     "full_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Full Name",
+      "description": "candidate: name shown to employers"
+     },
+     "company_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Name",
+      "description": "employer: company name (can be given later in the chat)"
      }
     },
     "type": "object",
@@ -5249,6 +5572,48 @@
        }
       ],
       "title": "Success Factors"
+     },
+     "languages": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Languages"
+     },
+     "availability": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Availability",
+      "description": "e.g. 'Dès que possible · 6 mois'"
+     },
+     "priority": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "elevee",
+         "normale",
+         "faible"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Priority"
      },
      "unknowns": {
       "anyOf": [
@@ -5492,6 +5857,31 @@
      "produced_by"
     ],
     "title": "ShortlistOut"
+   },
+   "SourceIn": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "linkedin",
+       "portfolio",
+       "other"
+      ],
+      "title": "Kind"
+     },
+     "url": {
+      "type": "string",
+      "maxLength": 500,
+      "pattern": "^https?://",
+      "title": "Url"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "url"
+    ],
+    "title": "SourceIn"
    },
    "SuccessCondition": {
     "properties": {
@@ -5789,6 +6179,26 @@
       "type": "array",
       "title": "Artifacts",
       "description": "objects produced (success_model, shortlist, confrontation...)"
+     },
+     "cards": {
+      "items": {
+       "$ref": "#/components/schemas/CardOut"
+      },
+      "type": "array",
+      "title": "Cards",
+      "description": "cards to render under the assistant message"
+     },
+     "flow_state": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Flow State",
+      "description": "employer: discovery|missions|role_summary|results|confrontation|recommendation; candidate: profile|sources|assessment|waiting"
      }
     },
     "type": "object",

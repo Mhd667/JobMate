@@ -61,6 +61,8 @@ ROLE_Q = {
     "role.responsibilities": "Concrètement, à quoi ressemble une semaine type dans ce poste ?",
     "role.constraints": "Y a-t-il des contraintes fortes : date de démarrage, langues, déplacements, budget ?",
     "role.stakeholders": "Avec qui cette personne va-t-elle travailler au quotidien (clients, équipes, manager) ?",
+    "role.languages": "Quelles langues la personne doit-elle parler avec vos clients et l'équipe ?",
+    "role.availability": "Pour quand avez-vous besoin de cette personne, et pour combien de temps ?",
     "role.success_factors": "D'après votre expérience, qu'est-ce qui distingue les personnes qui réussissent "
                             "vraiment à ce type de poste chez vous ? Et celles qui échouent ?",
 }
@@ -73,7 +75,8 @@ CANDIDATE_Q = {
     "candidate.aspirations": "Si tout se passait bien, où vous voyez-vous dans 3 ans ?",
 }
 LIST_FIELDS = {"values", "responsibilities", "objectives", "constraints", "stakeholders", "success_factors",
-               "professional_goals", "strengths", "preferences", "aspirations", "unknowns", "assumptions"}
+               "professional_goals", "strengths", "preferences", "aspirations", "unknowns", "assumptions",
+               "languages"}
 
 
 def employer_intent(msg: str) -> c.EmployerIntent:
@@ -173,16 +176,26 @@ class HeuristicIntelligence:
         missing = [f for f in ctx.missing_fields if f != ctx.last_asked_field or intent != "inform"]
         if intent != "inform":
             return c.EmployerTurnOutput(reply="Je m'en occupe.", intent=intent)
-        if missing:
-            nxt = missing[0]
-            q = {**COMPANY_Q, **ROLE_Q}.get(nxt, "Pouvez-vous m'en dire plus ?")
+        role_missing = [f for f in missing if f.startswith("role.")]
+        if role_missing:
+            nxt = role_missing[0]
+            if nxt == "role.responsibilities":
+                # Deterministic baseline: generic options; the LLM proposes options adapted to the role.
+                return c.EmployerTurnOutput(
+                    reply=ack + "Pour bien cibler la recherche, cochez les missions principales du poste.",
+                    intent="inform", asked_field=nxt,
+                    company_identity_patch=c.CompanyIdentityPatch(**company_patch),
+                    role_identity_patch=c.RoleIdentityPatch(**role_patch),
+                    mission_question="Quelles sont les principales missions du poste ?",
+                    mission_options=["Prospection", "Vente / conversion", "Suivi client", "Gestion des réclamations",
+                                     "Reporting"])
+            q = ROLE_Q.get(nxt, "Pouvez-vous m'en dire plus ?")
             return c.EmployerTurnOutput(reply=ack + q, intent="inform",
                                         company_identity_patch=c.CompanyIdentityPatch(**company_patch),
                                         role_identity_patch=c.RoleIdentityPatch(**role_patch), asked_field=nxt)
         return c.EmployerTurnOutput(
-            reply=ack + "J'ai maintenant une bonne image du poste. Je peux construire le modèle de réussite, "
-                        "puis analyser les candidats disponibles. On y va ?",
-            intent="inform",
+            reply=ack + "J'ai une bonne image du poste. Voici le récapitulatif avant de lancer la recherche.",
+            intent="inform", ready_for_search=True,
             company_identity_patch=c.CompanyIdentityPatch(**company_patch),
             role_identity_patch=c.RoleIdentityPatch(**role_patch))
 
@@ -385,7 +398,11 @@ class HeuristicIntelligence:
         return c.MatchAnalysis(fit_summary=summary, fit_dimensions=dims, strengths=strengths, gaps=gaps,
                                tradeoffs=tradeoffs, risks=risks, uncertainties=uncertainties,
                                evidence_ids=list(dict.fromkeys(ev_ids)), satisfied_conditions=satisfied,
-                               confidence=confidence, ui_score=ui)
+                               confidence=confidence, ui_score=ui,
+                               candidate_explanation=(
+                                   "Ce poste s'appuie sur des points forts de votre profil : "
+                                   + ", ".join(x.split(" :")[0].lower() for x in strengths[:3]) + "."
+                                   if strengths else None))
 
     def shortlist(self, ctx: c.ShortlistContext) -> c.ShortlistOutput:
         ranked = sorted(ctx.matches, key=lambda m: (-(m.get("ui_score") or 0), -m["confidence"]))

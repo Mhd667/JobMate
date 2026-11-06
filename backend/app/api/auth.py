@@ -8,6 +8,7 @@ from app.auth.deps import current_user
 from app.auth.security import create_access_token, hash_password, verify_password
 from app.config import settings
 from app.db import get_db
+from app.engine.flows import DEFAULT_COMPANY_NAME
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -66,6 +67,15 @@ def choose_role(body: RoleChoiceIn, user: m.User = Depends(current_user), db: Se
     user.role = m.UserRole(body.role)
     if body.phone_number:
         user.phone_number = body.phone_number
+    db.flush()
+    # The chat is the product: create the business identity right away so the user lands in the chat.
+    # Real details (company name, city...) are filled in during the conversation.
+    if user.role == m.UserRole.employer:
+        if not db.scalars(select(m.Company.id).where(m.Company.owner_user_id == user.id)).first():
+            db.add(m.Company(owner_user_id=user.id, name=(body.company_name or "").strip() or DEFAULT_COMPANY_NAME))
+    elif not db.scalars(select(m.Candidate.id).where(m.Candidate.user_id == user.id)).first():
+        name = (body.full_name or "").strip() or (user.email or "").split("@")[0] or "Candidat"
+        db.add(m.Candidate(user_id=user.id, full_name=name))
     db.flush()
     db.refresh(user)
     return _me(db, user)

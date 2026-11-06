@@ -135,7 +135,8 @@ class Role(Base, Timestamped):
     title: Mapped[str] = mapped_column(String(200))
     location: Mapped[str | None] = mapped_column(String(120))
     contract_type: Mapped[str | None] = mapped_column(String(40))
-    status: Mapped[str] = mapped_column(String(20), default="open")  # draft|open|closed
+    duration: Mapped[str | None] = mapped_column(String(80))  # e.g. "6 mois", null = permanent
+    status: Mapped[str] = mapped_column(String(20), default="draft")  # draft|open|closed
     # Hard constraints usable by the engine, e.g. {"start_before": "2027-01-15", "languages": ["fr","wo"]}
     constraints: Mapped[dict] = _json(dict)
 
@@ -156,6 +157,9 @@ class RoleIdentity(Base, Timestamped):
     work_environment: Mapped[str | None] = mapped_column(Text)
     stakeholders: Mapped[list] = _json(list)
     success_factors: Mapped[list] = _json(list)
+    languages: Mapped[list] = _json(list)
+    availability: Mapped[str | None] = mapped_column(Text)  # when the person must start / for how long
+    priority: Mapped[str | None] = mapped_column(String(40))  # urgency: elevee|normale|faible
     unknowns: Mapped[list] = _json(list)
     assumptions: Mapped[list] = _json(list)
     confidence: Mapped[float] = mapped_column(Float, default=0.0)
@@ -199,6 +203,9 @@ class Candidate(Base, Timestamped):
     # {"available_from": "2026-12-01", "notice_weeks": 4, "notes": "..."}
     availability: Mapped[dict] = _json(dict)
     cv_text: Mapped[str | None] = mapped_column(Text)
+    cv_filename: Mapped[str | None] = mapped_column(String(255))
+    # Professional sources shared by the candidate: [{kind: linkedin|portfolio|other, url, added_at}]
+    sources: Mapped[list] = _json(list)
     status: Mapped[str] = mapped_column(String(20), default="active")
 
 
@@ -262,7 +269,7 @@ class Evidence(Base, Timestamped):
     source: Mapped[EvidenceSource] = mapped_column(Enum(EvidenceSource, name="evidence_source"))
     epistemic_status: Mapped[EpistemicStatus] = mapped_column(Enum(EpistemicStatus, name="epistemic_status"))
     confidence: Mapped[float] = mapped_column(Float, default=0.5)
-    polarity: Mapped[str] = mapped_column(String(10), default="supports")  # supports|contradicts
+    polarity: Mapped[str] = mapped_column(String(12), default="supports")  # supports|contradicts
     assessment_response_id: Mapped[uuid.UUID | None] = _fk(
         "assessment_responses.id", nullable=True, ondelete="SET NULL")
 
@@ -342,6 +349,12 @@ class Match(Base, Timestamped):
     ui_score: Mapped[int | None] = mapped_column(Integer)  # display only, never the reasoning
     shortlist_rank: Mapped[int | None] = mapped_column(Integer)
     shortlist_reason: Mapped[str | None] = mapped_column(Text)
+    # Explanation addressed to the candidate (offer card), distinct from the employer-facing summary.
+    candidate_explanation: Mapped[str | None] = mapped_column(Text)
+    # Human decisions, recorded from card actions. The engine never decides these.
+    employer_status: Mapped[str | None] = mapped_column(String(20))   # passed|interview|hired
+    candidate_status: Mapped[str | None] = mapped_column(String(20))  # offered|interested|declined
+    offered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     produced_by: Mapped[str] = mapped_column(String(40), default="manual")
 
 

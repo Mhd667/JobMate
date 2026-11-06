@@ -64,6 +64,8 @@ class RoleView(_M):
     id: str
     title: str
     location: str | None = None
+    contract_type: str | None = None
+    duration: str | None = None
     constraints: dict = Field(default_factory=dict)
     identity: dict = Field(default_factory=dict)
     success_model: SuccessModelView | None = None
@@ -145,6 +147,8 @@ class SuccessModelContext(_M):
 class CandidateUnderstandingContext(_M):
     candidate: CandidateView
     capability_vocabulary: list[CapabilitySpec] = Field(default_factory=list)
+    cv_text: str | None = Field(None, description="text extracted from the CV the candidate uploaded")
+    sources: list[dict] = Field(default_factory=list, description="links shared by the candidate (not verified)")
 
 
 class AssessmentContext(_M):
@@ -217,9 +221,25 @@ class RoleIdentityPatch(_M):
     work_environment: str | None = None
     stakeholders: list[str] | None = None
     success_factors: list[str] | None = None
+    languages: list[str] | None = None
+    availability: str | None = Field(None, description="e.g. 'Dès que possible · 6 mois'")
+    priority: Literal["elevee", "normale", "faible"] | None = None
     unknowns: list[str] | None = None
     assumptions: list[str] | None = None
     confidence: float | None = None
+
+
+class RoleBasicsPatch(_M):
+    title: str | None = Field(None, description="job title, e.g. 'Commerciale – Call Center'")
+    contract_type: str | None = Field(None, description="CDI, CDD, Remplacement, Stage, Freelance...")
+    duration: str | None = Field(None, description="e.g. '6 mois'; null if permanent")
+    location: str | None = None
+
+
+class CompanyBasicsPatch(_M):
+    name: str | None = None
+    city: str | None = None
+    country: str | None = None
 
 
 class ProfessionalIdentityPatch(_M):
@@ -239,7 +259,15 @@ class EmployerTurnOutput(_M):
     intent: EmployerIntent = "inform"
     company_identity_patch: CompanyIdentityPatch = Field(default_factory=CompanyIdentityPatch)
     role_identity_patch: RoleIdentityPatch = Field(default_factory=RoleIdentityPatch)
+    role_basics: RoleBasicsPatch = Field(default_factory=RoleBasicsPatch)
+    company_basics: CompanyBasicsPatch = Field(default_factory=CompanyBasicsPatch)
     asked_field: str | None = Field(None, description="the field the reply asks about, e.g. 'role.objectives'")
+    mission_question: str | None = Field(
+        None, description="when the main missions are still unclear: a short question shown on a multi-select card")
+    mission_options: list[str] = Field(
+        default_factory=list, description="3 to 7 concrete missions the employer can tick (only with mission_question)")
+    ready_for_search: bool = Field(
+        False, description="true when the role is understood well enough to show the role summary card")
 
 
 class CandidateTurnOutput(_M):
@@ -326,6 +354,8 @@ class MatchAnalysis(_M):
     satisfied_conditions: list[str] = Field(default_factory=list)
     confidence: float = Field(ge=0, le=1)
     ui_score: int | None = Field(None, ge=0, le=100, description="display only")
+    candidate_explanation: str | None = Field(
+        None, description="2-3 sentences addressed to the candidate (vous): why this role fits them")
 
 
 class ShortlistEntry(_M):

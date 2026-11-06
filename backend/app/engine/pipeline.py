@@ -66,8 +66,10 @@ def understand_candidate(db: Session, candidate_id) -> dict:
     for sm in db.scalars(select(m.SuccessModel)):
         vocab += [c.CapabilitySpec.model_validate(x) for x in sm.critical_capabilities]
     vocab = list({v.key: v for v in vocab}.values())
+    row = db.get(m.Candidate, candidate_id)
     out = intel.understand_candidate(c.CandidateUnderstandingContext(
-        candidate=cb.candidate(candidate_id), capability_vocabulary=vocab))
+        candidate=cb.candidate(candidate_id), capability_vocabulary=vocab,
+        cv_text=(row.cv_text or "")[:12000] or None, sources=row.sources or []))
     for cap in out.capabilities:
         row = db.scalars(select(m.Capability).where(m.Capability.candidate_id == candidate_id,
                                                     m.Capability.key == cap.key)).first()
@@ -236,85 +238,3 @@ def _post(db: Session, conv: m.Conversation, sender: str, content: str, meta: di
     db.add(msg)
     db.flush()
     return msg
-
-
-def employer_message(db: Session, conv: m.Conversation, content: str) -> dict:
-    cb, intel = ContextBuilder(db), get_intelligence()
-    user_msg = _post(db, conv, "user", content)
-    company = cb.company(conv.company_id)
-    role = cb.role(conv.role_id) if conv.role_id else None
-    ctx = c.EmployerConversationContext(
-        company=company, role=role, history=cb.history(conv.id), user_message=content,
-        last_asked_field=conv.state.get("asked_field"),
-        missing_fields=cb.missing_company_role_fields(company, role))
-    turn = intel.employer_turn(ctx)
-    producer = _producer(intel)
-    updates, artifacts = [], []
-    cpatch = turn.company_identity_patch.model_dump(exclude_none=True)
-    if cpatch:
-        new_version(db, m.CompanyIdentity, conv.company_id, cpatch, producer, merge_lists=True)
-        updates.append({"entity": "company_identity", "fields": sorted(cpatch)})
-    rpatch = turn.role_identity_patch.model_dump(exclude_none=True)
-    if rpatch and conv.role_id:
-        new_version(db, m.RoleIdentity, conv.role_id, rpatch, producer, merge_lists=True)
-        updates.append({"entity": "role_identity", "fields": sorted(rpatch)})
-    reply = turn.reply
-
-    # Intent dispatch: the conversation is the primary interface to the whole pipeline.
-    if turn.intent != "inform" and turn.intent != "smalltalk" and conv.role_id:
-        rid = conv.role_id
-        if turn.intent == "request_success_model":
-            sm = generate_success_model(db, rid)
-            artifacts.append({"type": "success_model", "id": str(sm.id), "version": sm.version})
-            reply = ("Voici le modèle de réussite du poste : "
-                     + ", ".join(f"{x['name']} ({IMPORTANCE_FR[x['importance']]})" for x in sm.critical_capabilities) + ".")
-        elif turn.intent == "request_matching":
-            ms = run_matching(db, rid)
-            artifacts += [{"type": "match", "id": str(x.id)} for x in ms]
-            reply = f"J'ai analysé {len(ms)} candidats au regard du modèle de réussite."
-        elif turn.intent == "request_shortlist":
-            sl = build_shortlist(db, rid)
-            artifacts.append({"type": "shortlist", "role_id": str(rid)})
-            reply = sl["summary"] + "\n" + "\n".join(f"{e['rank']}. {e['reason']}" for e in sl["shortlist"])
-        elif turn.intent == "request_confrontation":
-            cf = confront(db, rid, content)
-            artifacts.append({"type": "confrontation", "id": str(cf.id)})
-            reply = "\n".join(p["headline"] for p in cf.profiles) + "\n\n" + cf.reasoning
-        elif turn.intent == "request_recommendation":
-            rec = recommend(db, rid)
-            artifacts.append({"type": "recommendation", "id": str(rec.id)})
-            reply = rec.reasoning_summary
-    conv.state = {**conv.state, "asked_field": turn.asked_field}
-    assistant = _post(db, conv, "assistant", reply, {"intent": turn.intent, "updates": updates,
-                                                     "artifacts": artifacts, "produced_by": producer,
-                                                     "asked_field": turn.asked_field})
-    return {"user_message": user_msg, "assistant_message": assistant, "intent": turn.intent,
-            "updates": updates, "artifacts": artifacts}
-
-
-def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
-    cb, intel = ContextBuilder(db), get_intelligence()
-    user_msg = _post(db, conv, "user", content)
-    cand = cb.candidate(conv.candidate_id)
-    turn = intel.candidate_turn(c.CandidateConversationContext(
-        candidate=cand, history=cb.history(conv.id), user_message=content,
-        last_asked_field=conv.state.get("asked_field"), missing_fields=cb.missing_candidate_fields(cand)))
-    producer = _producer(intel)
-    updates, artifacts = [], []
-    patch = turn.professional_identity_patch.model_dump(exclude_none=True)
-    if patch:
-        new_version(db, m.ProfessionalIdentity, conv.candidate_id, patch, producer, merge_lists=True)
-        updates.append({"entity": "professional_identity", "fields": sorted(patch)})
-        # What the candidate says about themself is kept as self-declared, never as fact.
-        if patch.get("strengths"):
-            from app.intelligence.heuristic import detect_capabilities
-            _save_evidence(db, conv.candidate_id, [c.EvidenceDraft(
-                subject_type="capability", subject_key=(detect_capabilities(s) or [None])[0], claim=s, evidence=f"Déclaré en conversation : « {s} »",
-                source="self_declared", epistemic_status="hypothesis", confidence=0.3) for s in patch["strengths"]])
-    if turn.intent == "request_opportunities":
-        artifacts.append({"type": "opportunities", "candidate_id": str(conv.candidate_id)})
-    conv.state = {**conv.state, "asked_field": turn.asked_field}
-    assistant = _post(db, conv, "assistant", turn.reply, {"intent": turn.intent, "updates": updates,
-                                                          "artifacts": artifacts, "produced_by": producer})
-    return {"user_message": user_msg, "assistant_message": assistant, "intent": turn.intent,
-            "updates": updates, "artifacts": artifacts}
