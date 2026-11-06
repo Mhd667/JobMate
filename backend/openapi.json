@@ -1,0 +1,5901 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "JobMate API",
+  "description": "Intelligence de recrutement conversationnelle — MVP. Company/Role understanding → Candidate understanding → Evidence → Assessment → Matching → Top 3 → Confrontation → Recommendation.",
+  "version": "0.2.0"
+ },
+ "paths": {
+  "/auth/me": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Me",
+    "description": "Who am I, and where should the app send me next (role choice, onboarding, home).",
+    "operationId": "me_auth_me_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/auth/role": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Choose Role",
+    "description": "Role choice page. A role can be set once; changing it later is not allowed in the MVP.",
+    "operationId": "choose_role_auth_role_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RoleChoiceIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/companies": {
+   "get": {
+    "tags": [
+     "company"
+    ],
+    "summary": "My Companies",
+    "operationId": "my_companies_companies_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CompanyOut"
+         },
+         "type": "array",
+         "title": "Response My Companies Companies Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   },
+   "post": {
+    "tags": [
+     "company"
+    ],
+    "summary": "Create Company",
+    "operationId": "create_company_companies_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompanyIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompanyOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/companies/{company_id}": {
+   "get": {
+    "tags": [
+     "company"
+    ],
+    "summary": "Get Company",
+    "operationId": "get_company_companies__company_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Company Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompanyOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/companies/{company_id}/identity": {
+   "get": {
+    "tags": [
+     "company"
+    ],
+    "summary": "Get Company Identity",
+    "operationId": "get_company_identity_companies__company_id__identity_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Company Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/CompanyIdentityOut"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Company Identity Companies  Company Id  Identity Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "company"
+    ],
+    "summary": "Patch Company Identity",
+    "operationId": "patch_company_identity_companies__company_id__identity_patch",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Company Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompanyIdentityPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompanyIdentityOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/companies/{company_id}/identity/history": {
+   "get": {
+    "tags": [
+     "company"
+    ],
+    "summary": "Company Identity History",
+    "operationId": "company_identity_history_companies__company_id__identity_history_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Company Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CompanyIdentityOut"
+         },
+         "title": "Response Company Identity History Companies  Company Id  Identity History Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/companies/{company_id}/roles": {
+   "post": {
+    "tags": [
+     "company",
+     "roles"
+    ],
+    "summary": "Create Role",
+    "operationId": "create_role_companies__company_id__roles_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Company Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RoleIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "company",
+     "roles"
+    ],
+    "summary": "List Roles",
+    "operationId": "list_roles_companies__company_id__roles_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "company_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Company Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/RoleOut"
+         },
+         "title": "Response List Roles Companies  Company Id  Roles Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}": {
+   "get": {
+    "tags": [
+     "company",
+     "roles"
+    ],
+    "summary": "Get Role",
+    "operationId": "get_role_roles__role_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/card": {
+   "get": {
+    "tags": [
+     "company",
+     "roles"
+    ],
+    "summary": "Role Card",
+    "operationId": "role_card_roles__role_id__card_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleCardOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/identity": {
+   "get": {
+    "tags": [
+     "company",
+     "roles"
+    ],
+    "summary": "Get Role Identity",
+    "operationId": "get_role_identity_roles__role_id__identity_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/RoleIdentityOut"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Role Identity Roles  Role Id  Identity Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "company",
+     "roles"
+    ],
+    "summary": "Patch Role Identity",
+    "operationId": "patch_role_identity_roles__role_id__identity_patch",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/RoleIdentityPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RoleIdentityOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/success-model": {
+   "get": {
+    "tags": [
+     "company",
+     "success model"
+    ],
+    "summary": "Get Success Model",
+    "operationId": "get_success_model_roles__role_id__success_model_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/SuccessModelOut"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Success Model Roles  Role Id  Success Model Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "company",
+     "success model"
+    ],
+    "summary": "Patch Success Model",
+    "description": "Employer corrections to the model (e.g. changing the decision priority).",
+    "operationId": "patch_success_model_roles__role_id__success_model_patch",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SuccessModelIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SuccessModelOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/success-model/generate": {
+   "post": {
+    "tags": [
+     "company",
+     "success model"
+    ],
+    "summary": "Generate Success Model",
+    "operationId": "generate_success_model_roles__role_id__success_model_generate_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SuccessModelOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates": {
+   "get": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "List Candidates",
+    "operationId": "list_candidates_candidates_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CandidateOut"
+         },
+         "type": "array",
+         "title": "Response List Candidates Candidates Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   },
+   "post": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Create Candidate",
+    "description": "A candidate creates their own profile; an employer may add a candidate they sourced.",
+    "operationId": "create_candidate_candidates_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CandidateIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CandidateOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/candidates/me": {
+   "get": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "My Profile",
+    "operationId": "my_profile_candidates_me_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CandidateProfileOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/candidates/{candidate_id}": {
+   "get": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Get Candidate",
+    "operationId": "get_candidate_candidates__candidate_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CandidateProfileOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates/{candidate_id}/professional-identity": {
+   "get": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Get Identity",
+    "operationId": "get_identity_candidates__candidate_id__professional_identity_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/ProfessionalIdentityOut"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Get Identity Candidates  Candidate Id  Professional Identity Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Patch Identity",
+    "operationId": "patch_identity_candidates__candidate_id__professional_identity_patch",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProfessionalIdentityPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProfessionalIdentityOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates/{candidate_id}/experiences": {
+   "post": {
+    "tags": [
+     "candidates"
+    ],
+    "summary": "Add Experience",
+    "operationId": "add_experience_candidates__candidate_id__experiences_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ExperienceIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ExperienceOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates/{candidate_id}/analyze": {
+   "post": {
+    "tags": [
+     "candidates",
+     "evidence"
+    ],
+    "summary": "Analyze Candidate",
+    "description": "Candidate understanding: derive capabilities + evidence from experiences / CV.",
+    "operationId": "analyze_candidate_candidates__candidate_id__analyze_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Analyze Candidate Candidates  Candidate Id  Analyze Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates/{candidate_id}/evidence": {
+   "get": {
+    "tags": [
+     "candidates",
+     "evidence"
+    ],
+    "summary": "List Evidence",
+    "operationId": "list_evidence_candidates__candidate_id__evidence_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     },
+     {
+      "name": "role_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "uuid"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/EvidenceOut"
+         },
+         "title": "Response List Evidence Candidates  Candidate Id  Evidence Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "candidates",
+     "evidence"
+    ],
+    "summary": "Add Evidence",
+    "description": "Employer-side evidence (reference check, interview note...).",
+    "operationId": "add_evidence_candidates__candidate_id__evidence_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EvidenceIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EvidenceOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/candidates/{candidate_id}/analysis": {
+   "get": {
+    "tags": [
+     "candidates",
+     "evidence"
+    ],
+    "summary": "Candidate Analysis",
+    "description": "What is known / what remains uncertain about this candidate for this role.",
+    "operationId": "candidate_analysis_roles__role_id__candidates__candidate_id__analysis_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CandidateAnalysisOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates/me/opportunities": {
+   "get": {
+    "tags": [
+     "candidates",
+     "candidates"
+    ],
+    "summary": "My Opportunities",
+    "operationId": "my_opportunities_candidates_me_opportunities_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/OpportunityOut"
+         },
+         "type": "array",
+         "title": "Response My Opportunities Candidates Me Opportunities Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/roles/{role_id}/candidates/{candidate_id}/assessments/next": {
+   "post": {
+    "tags": [
+     "assessment"
+    ],
+    "summary": "Next Assessment",
+    "description": "Adaptive: picks the question that most reduces the uncertainty that matters for the decision.",
+    "operationId": "next_assessment_roles__role_id__candidates__candidate_id__assessments_next_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssessmentRequestOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/candidates/{candidate_id}/assessments": {
+   "get": {
+    "tags": [
+     "assessment"
+    ],
+    "summary": "List Assessments",
+    "operationId": "list_assessments_roles__role_id__candidates__candidate_id__assessments_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/AssessmentRequestOut"
+         },
+         "title": "Response List Assessments Roles  Role Id  Candidates  Candidate Id  Assessments Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/candidates/me/assessments": {
+   "get": {
+    "tags": [
+     "assessment"
+    ],
+    "summary": "My Assessments",
+    "operationId": "my_assessments_candidates_me_assessments_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AssessmentRequestOut"
+         },
+         "type": "array",
+         "title": "Response My Assessments Candidates Me Assessments Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/assessments/{request_id}/responses": {
+   "post": {
+    "tags": [
+     "assessment"
+    ],
+    "summary": "Answer",
+    "description": "The candidate answers (or, for the demo, the employer records the answer).",
+    "operationId": "answer_assessments__request_id__responses_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "request_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Request Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssessmentResponseIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssessmentResponseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/matches/run": {
+   "post": {
+    "tags": [
+     "matching"
+    ],
+    "summary": "Run Matching",
+    "operationId": "run_matching_roles__role_id__matches_run_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "$ref": "#/components/schemas/MatchRunIn"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/MatchOut"
+         },
+         "title": "Response Run Matching Roles  Role Id  Matches Run Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/matches": {
+   "get": {
+    "tags": [
+     "matching"
+    ],
+    "summary": "List Matches",
+    "operationId": "list_matches_roles__role_id__matches_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/MatchOut"
+         },
+         "title": "Response List Matches Roles  Role Id  Matches Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/matches/{candidate_id}": {
+   "get": {
+    "tags": [
+     "matching"
+    ],
+    "summary": "Get Match",
+    "operationId": "get_match_roles__role_id__matches__candidate_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     },
+     {
+      "name": "candidate_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Candidate Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MatchOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/shortlist": {
+   "post": {
+    "tags": [
+     "shortlist"
+    ],
+    "summary": "Make Shortlist",
+    "operationId": "make_shortlist_roles__role_id__shortlist_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "$ref": "#/components/schemas/ShortlistIn"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ShortlistOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "shortlist"
+    ],
+    "summary": "Get Shortlist",
+    "operationId": "get_shortlist_roles__role_id__shortlist_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/MatchOut"
+         },
+         "title": "Response Get Shortlist Roles  Role Id  Shortlist Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/confrontations": {
+   "post": {
+    "tags": [
+     "confrontation"
+    ],
+    "summary": "Create Confrontation",
+    "operationId": "create_confrontation_roles__role_id__confrontations_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ConfrontationIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConfrontationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "confrontation"
+    ],
+    "summary": "List Confrontations",
+    "operationId": "list_confrontations_roles__role_id__confrontations_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ConfrontationOut"
+         },
+         "title": "Response List Confrontations Roles  Role Id  Confrontations Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/confrontations/{confrontation_id}": {
+   "get": {
+    "tags": [
+     "confrontation"
+    ],
+    "summary": "Get Confrontation",
+    "operationId": "get_confrontation_confrontations__confrontation_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "confrontation_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Confrontation Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConfrontationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/recommendations": {
+   "post": {
+    "tags": [
+     "recommendation"
+    ],
+    "summary": "Create Recommendation",
+    "operationId": "create_recommendation_roles__role_id__recommendations_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "anyOf": [
+         {
+          "$ref": "#/components/schemas/RecommendationIn"
+         },
+         {
+          "type": "null"
+         }
+        ],
+        "title": "Body"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/roles/{role_id}/recommendations/latest": {
+   "get": {
+    "tags": [
+     "recommendation"
+    ],
+    "summary": "Latest Recommendation",
+    "operationId": "latest_recommendation_roles__role_id__recommendations_latest_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "role_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Role Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RecommendationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/conversations": {
+   "get": {
+    "tags": [
+     "conversations"
+    ],
+    "summary": "Mine",
+    "operationId": "mine_conversations_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/ConversationOut"
+         },
+         "type": "array",
+         "title": "Response Mine Conversations Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   },
+   "post": {
+    "tags": [
+     "conversations"
+    ],
+    "summary": "Start",
+    "operationId": "start_conversations_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ConversationIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConversationDetailOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/conversations/{conversation_id}": {
+   "get": {
+    "tags": [
+     "conversations"
+    ],
+    "summary": "Get Conversation",
+    "operationId": "get_conversation_conversations__conversation_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "conversation_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Conversation Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ConversationDetailOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/conversations/{conversation_id}/messages": {
+   "post": {
+    "tags": [
+     "conversations"
+    ],
+    "summary": "Send",
+    "operationId": "send_conversations__conversation_id__messages_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "conversation_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "format": "uuid",
+       "title": "Conversation Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MessageIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TurnOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/health": {
+   "get": {
+    "tags": [
+     "meta"
+    ],
+    "summary": "Health",
+    "operationId": "health_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Health Health Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AssessmentRequestOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "target_capability": {
+      "type": "string",
+      "title": "Target Capability"
+     },
+     "objective": {
+      "type": "string",
+      "title": "Objective"
+     },
+     "question_type": {
+      "type": "string",
+      "title": "Question Type"
+     },
+     "question": {
+      "type": "string",
+      "title": "Question"
+     },
+     "expected_evidence": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Expected Evidence"
+     },
+     "rationale": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rationale"
+     },
+     "expected_value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Expected Value"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "role_id",
+     "candidate_id",
+     "target_capability",
+     "objective",
+     "question_type",
+     "question",
+     "expected_evidence",
+     "rationale",
+     "expected_value",
+     "status",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "AssessmentRequestOut"
+   },
+   "AssessmentResponseIn": {
+    "properties": {
+     "response": {
+      "type": "string",
+      "minLength": 1,
+      "title": "Response"
+     }
+    },
+    "type": "object",
+    "required": [
+     "response"
+    ],
+    "title": "AssessmentResponseIn"
+   },
+   "AssessmentResponseOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "assessment_request_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Assessment Request Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "response": {
+      "type": "string",
+      "title": "Response"
+     },
+     "observed_behaviors": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Observed Behaviors"
+     },
+     "evidence": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Evidence"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "assessment_request_id",
+     "candidate_id",
+     "response",
+     "observed_behaviors",
+     "evidence",
+     "confidence",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "AssessmentResponseOut"
+   },
+   "CandidateAnalysisOut": {
+    "properties": {
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "coverage": {
+      "items": {
+       "$ref": "#/components/schemas/CoverageOut"
+      },
+      "type": "array",
+      "title": "Coverage"
+     },
+     "known": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Known"
+     },
+     "uncertain": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Uncertain"
+     },
+     "constraint_flags": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Constraint Flags"
+     }
+    },
+    "type": "object",
+    "required": [
+     "candidate_id",
+     "role_id",
+     "coverage",
+     "known",
+     "uncertain",
+     "constraint_flags"
+    ],
+    "title": "CandidateAnalysisOut",
+    "description": "Known vs uncertain, for one candidate against one role's Success Model."
+   },
+   "CandidateIn": {
+    "properties": {
+     "full_name": {
+      "type": "string",
+      "title": "Full Name"
+     },
+     "headline": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Headline"
+     },
+     "location": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Location"
+     },
+     "availability": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Availability",
+      "examples": [
+       {
+        "available_from": "2026-12-01",
+        "notice_weeks": 4
+       }
+      ]
+     },
+     "cv_text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cv Text"
+     }
+    },
+    "type": "object",
+    "required": [
+     "full_name"
+    ],
+    "title": "CandidateIn"
+   },
+   "CandidateOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "user_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "User Id"
+     },
+     "full_name": {
+      "type": "string",
+      "title": "Full Name"
+     },
+     "headline": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Headline"
+     },
+     "location": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Location"
+     },
+     "availability": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Availability"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "user_id",
+     "full_name",
+     "headline",
+     "location",
+     "availability",
+     "status",
+     "created_at"
+    ],
+    "title": "CandidateOut"
+   },
+   "CandidateProfileOut": {
+    "properties": {
+     "candidate": {
+      "$ref": "#/components/schemas/CandidateOut"
+     },
+     "professional_identity": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ProfessionalIdentityOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "experiences": {
+      "items": {
+       "$ref": "#/components/schemas/ExperienceOut"
+      },
+      "type": "array",
+      "title": "Experiences"
+     },
+     "capabilities": {
+      "items": {
+       "$ref": "#/components/schemas/CapabilityOut"
+      },
+      "type": "array",
+      "title": "Capabilities"
+     },
+     "evidence": {
+      "items": {
+       "$ref": "#/components/schemas/EvidenceOut"
+      },
+      "type": "array",
+      "title": "Evidence"
+     }
+    },
+    "type": "object",
+    "required": [
+     "candidate",
+     "professional_identity",
+     "experiences",
+     "capabilities",
+     "evidence"
+    ],
+    "title": "CandidateProfileOut"
+   },
+   "CapabilityOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "key": {
+      "type": "string",
+      "title": "Key"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "level": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Level"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "key",
+     "name",
+     "level",
+     "status",
+     "confidence",
+     "source"
+    ],
+    "title": "CapabilityOut"
+   },
+   "CapabilitySpec": {
+    "properties": {
+     "key": {
+      "type": "string",
+      "title": "Key"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "description": {
+      "type": "string",
+      "title": "Description",
+      "default": ""
+     },
+     "importance": {
+      "type": "string",
+      "enum": [
+       "critical",
+       "important",
+       "nice"
+      ],
+      "title": "Importance",
+      "default": "important"
+     },
+     "observable_evidence": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Observable Evidence"
+     }
+    },
+    "type": "object",
+    "required": [
+     "key",
+     "name"
+    ],
+    "title": "CapabilitySpec"
+   },
+   "CompanyIdentityOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "company_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Company Id"
+     },
+     "version": {
+      "type": "integer",
+      "title": "Version"
+     },
+     "mission": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mission"
+     },
+     "business_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Business Model"
+     },
+     "industry": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry"
+     },
+     "culture": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Culture"
+     },
+     "work_style": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Work Style"
+     },
+     "management_style": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Management Style"
+     },
+     "environment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Environment"
+     },
+     "values": {
+      "items": {},
+      "type": "array",
+      "title": "Values"
+     },
+     "context": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Context"
+     },
+     "unknowns": {
+      "items": {},
+      "type": "array",
+      "title": "Unknowns"
+     },
+     "assumptions": {
+      "items": {},
+      "type": "array",
+      "title": "Assumptions"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "company_id",
+     "version",
+     "mission",
+     "business_model",
+     "industry",
+     "culture",
+     "work_style",
+     "management_style",
+     "environment",
+     "values",
+     "context",
+     "unknowns",
+     "assumptions",
+     "confidence",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "CompanyIdentityOut"
+   },
+   "CompanyIdentityPatch": {
+    "properties": {
+     "mission": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mission"
+     },
+     "business_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Business Model"
+     },
+     "industry": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Industry"
+     },
+     "culture": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Culture"
+     },
+     "work_style": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Work Style"
+     },
+     "management_style": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Management Style"
+     },
+     "environment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Environment"
+     },
+     "values": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Values"
+     },
+     "context": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Context"
+     },
+     "unknowns": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unknowns"
+     },
+     "assumptions": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assumptions"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
+     }
+    },
+    "type": "object",
+    "title": "CompanyIdentityPatch"
+   },
+   "CompanyIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "website": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Website"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "city": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "City"
+     },
+     "size": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Size"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "CompanyIn"
+   },
+   "CompanyOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "website": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Website"
+     },
+     "country": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Country"
+     },
+     "city": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "City"
+     },
+     "size": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Size"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "website",
+     "country",
+     "city",
+     "size",
+     "description",
+     "created_at"
+    ],
+    "title": "CompanyOut"
+   },
+   "ConfrontationIn": {
+    "properties": {
+     "decision_question": {
+      "type": "string",
+      "title": "Decision Question",
+      "default": "Compare-moi les trois finalistes."
+     },
+     "candidate_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string",
+         "format": "uuid"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Ids",
+      "description": "defaults to the current Top 3"
+     }
+    },
+    "type": "object",
+    "title": "ConfrontationIn"
+   },
+   "ConfrontationItemOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "dimension": {
+      "type": "string",
+      "title": "Dimension"
+     },
+     "level": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Level"
+     },
+     "assessment": {
+      "type": "string",
+      "title": "Assessment"
+     },
+     "evidence": {
+      "items": {},
+      "type": "array",
+      "title": "Evidence"
+     },
+     "strength": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Strength"
+     },
+     "risk": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Risk"
+     },
+     "uncertainty": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Uncertainty"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "candidate_id",
+     "dimension",
+     "level",
+     "assessment",
+     "evidence",
+     "strength",
+     "risk",
+     "uncertainty"
+    ],
+    "title": "ConfrontationItemOut"
+   },
+   "ConfrontationOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "decision_question": {
+      "type": "string",
+      "title": "Decision Question"
+     },
+     "candidate_ids": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Candidate Ids"
+     },
+     "comparison_dimensions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Comparison Dimensions"
+     },
+     "profiles": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Profiles"
+     },
+     "tradeoffs": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Tradeoffs"
+     },
+     "winner_candidate_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Winner Candidate Id"
+     },
+     "reasoning": {
+      "type": "string",
+      "title": "Reasoning"
+     },
+     "uncertainties": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Uncertainties"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/ConfrontationItemOut"
+      },
+      "type": "array",
+      "title": "Items"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "role_id",
+     "decision_question",
+     "candidate_ids",
+     "comparison_dimensions",
+     "profiles",
+     "tradeoffs",
+     "winner_candidate_id",
+     "reasoning",
+     "uncertainties",
+     "status",
+     "items",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "ConfrontationOut"
+   },
+   "ConversationDetailOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     },
+     "candidate_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Id"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     },
+     "messages": {
+      "items": {
+       "$ref": "#/components/schemas/MessageOut"
+      },
+      "type": "array",
+      "title": "Messages"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "kind",
+     "company_id",
+     "role_id",
+     "candidate_id",
+     "title",
+     "created_at",
+     "messages"
+    ],
+    "title": "ConversationDetailOut"
+   },
+   "ConversationIn": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "employer",
+       "candidate"
+      ],
+      "title": "Kind"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind"
+    ],
+    "title": "ConversationIn"
+   },
+   "ConversationOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     },
+     "candidate_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Id"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "kind",
+     "company_id",
+     "role_id",
+     "candidate_id",
+     "title",
+     "created_at"
+    ],
+    "title": "ConversationOut"
+   },
+   "CoverageOut": {
+    "properties": {
+     "capability_key": {
+      "type": "string",
+      "title": "Capability Key"
+     },
+     "capability_name": {
+      "type": "string",
+      "title": "Capability Name"
+     },
+     "importance": {
+      "type": "string",
+      "title": "Importance"
+     },
+     "support": {
+      "type": "number",
+      "title": "Support"
+     },
+     "certainty": {
+      "type": "number",
+      "title": "Certainty"
+     },
+     "level": {
+      "type": "string",
+      "title": "Level"
+     },
+     "evidence_ids": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Evidence Ids"
+     },
+     "open_assessments": {
+      "type": "integer",
+      "title": "Open Assessments"
+     }
+    },
+    "type": "object",
+    "required": [
+     "capability_key",
+     "capability_name",
+     "importance",
+     "support",
+     "certainty",
+     "level",
+     "evidence_ids",
+     "open_assessments"
+    ],
+    "title": "CoverageOut"
+   },
+   "EvidenceIn": {
+    "properties": {
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     },
+     "subject_type": {
+      "type": "string",
+      "title": "Subject Type",
+      "default": "capability"
+     },
+     "subject_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject Id"
+     },
+     "subject_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject Key",
+      "examples": [
+       "objection_handling"
+      ]
+     },
+     "claim": {
+      "type": "string",
+      "title": "Claim"
+     },
+     "evidence": {
+      "type": "string",
+      "title": "Evidence"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "cv",
+       "previous_experience",
+       "conversation",
+       "assessment",
+       "reference",
+       "employer_note",
+       "self_declared"
+      ],
+      "title": "Source"
+     },
+     "epistemic_status": {
+      "type": "string",
+      "enum": [
+       "fact",
+       "inference",
+       "hypothesis",
+       "unknown"
+      ],
+      "title": "Epistemic Status"
+     },
+     "confidence": {
+      "type": "number",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Confidence"
+     },
+     "polarity": {
+      "type": "string",
+      "enum": [
+       "supports",
+       "contradicts"
+      ],
+      "title": "Polarity",
+      "default": "supports"
+     }
+    },
+    "type": "object",
+    "required": [
+     "claim",
+     "evidence",
+     "source",
+     "epistemic_status",
+     "confidence"
+    ],
+    "title": "EvidenceIn"
+   },
+   "EvidenceOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "role_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role Id"
+     },
+     "subject_type": {
+      "type": "string",
+      "title": "Subject Type"
+     },
+     "subject_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject Id"
+     },
+     "subject_key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subject Key"
+     },
+     "claim": {
+      "type": "string",
+      "title": "Claim"
+     },
+     "evidence": {
+      "type": "string",
+      "title": "Evidence"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "epistemic_status": {
+      "type": "string",
+      "title": "Epistemic Status"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "polarity": {
+      "type": "string",
+      "title": "Polarity"
+     },
+     "assessment_response_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assessment Response Id"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "candidate_id",
+     "role_id",
+     "subject_type",
+     "subject_id",
+     "subject_key",
+     "claim",
+     "evidence",
+     "source",
+     "epistemic_status",
+     "confidence",
+     "polarity",
+     "assessment_response_id",
+     "created_at"
+    ],
+    "title": "EvidenceOut"
+   },
+   "ExperienceIn": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "organization": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Organization"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Start Date",
+      "examples": [
+       "2022-03"
+      ]
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "End Date"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "achievements": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Achievements"
+     },
+     "skills": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Skills"
+     }
+    },
+    "type": "object",
+    "required": [
+     "title"
+    ],
+    "title": "ExperienceIn"
+   },
+   "ExperienceOut": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "organization": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Organization"
+     },
+     "sector": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sector"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Start Date",
+      "examples": [
+       "2022-03"
+      ]
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "End Date"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "achievements": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Achievements"
+     },
+     "skills": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Skills"
+     },
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "title",
+     "id",
+     "candidate_id"
+    ],
+    "title": "ExperienceOut"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "MatchOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "candidate_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Name"
+     },
+     "success_model_version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Success Model Version"
+     },
+     "fit_summary": {
+      "type": "string",
+      "title": "Fit Summary"
+     },
+     "fit_dimensions": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Fit Dimensions"
+     },
+     "strengths": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Strengths"
+     },
+     "gaps": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Gaps"
+     },
+     "tradeoffs": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Tradeoffs"
+     },
+     "risks": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Risks"
+     },
+     "uncertainties": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Uncertainties"
+     },
+     "evidence": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Evidence"
+     },
+     "satisfied_conditions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Satisfied Conditions"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "ui_score": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ui Score",
+      "description": "display helper only; not the reasoning"
+     },
+     "shortlist_rank": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shortlist Rank"
+     },
+     "shortlist_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shortlist Reason"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Updated At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "role_id",
+     "candidate_id",
+     "success_model_version",
+     "fit_summary",
+     "fit_dimensions",
+     "strengths",
+     "gaps",
+     "tradeoffs",
+     "risks",
+     "uncertainties",
+     "evidence",
+     "satisfied_conditions",
+     "confidence",
+     "ui_score",
+     "shortlist_rank",
+     "shortlist_reason",
+     "produced_by",
+     "updated_at"
+    ],
+    "title": "MatchOut"
+   },
+   "MatchRunIn": {
+    "properties": {
+     "candidate_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string",
+         "format": "uuid"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Ids"
+     }
+    },
+    "type": "object",
+    "title": "MatchRunIn"
+   },
+   "MeOut": {
+    "properties": {
+     "user": {
+      "$ref": "#/components/schemas/UserOut"
+     },
+     "company_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Company Id"
+     },
+     "candidate_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Candidate Id"
+     },
+     "next_step": {
+      "type": "string",
+      "enum": [
+       "choose_role",
+       "create_company",
+       "employer_home",
+       "create_profile",
+       "candidate_home"
+      ],
+      "title": "Next Step"
+     }
+    },
+    "type": "object",
+    "required": [
+     "user",
+     "company_id",
+     "candidate_id",
+     "next_step"
+    ],
+    "title": "MeOut"
+   },
+   "MessageIn": {
+    "properties": {
+     "content": {
+      "type": "string",
+      "minLength": 1,
+      "title": "Content"
+     }
+    },
+    "type": "object",
+    "required": [
+     "content"
+    ],
+    "title": "MessageIn"
+   },
+   "MessageOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "sender": {
+      "type": "string",
+      "title": "Sender"
+     },
+     "content": {
+      "type": "string",
+      "title": "Content"
+     },
+     "meta": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Meta"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "sender",
+     "content",
+     "meta",
+     "created_at"
+    ],
+    "title": "MessageOut"
+   },
+   "OpportunityOut": {
+    "properties": {
+     "role": {
+      "$ref": "#/components/schemas/RoleOut"
+     },
+     "company_name": {
+      "type": "string",
+      "title": "Company Name"
+     },
+     "match": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/MatchOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "role",
+     "company_name",
+     "match"
+    ],
+    "title": "OpportunityOut"
+   },
+   "ProfessionalIdentityOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "version": {
+      "type": "integer",
+      "title": "Version"
+     },
+     "career_direction": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Career Direction"
+     },
+     "professional_goals": {
+      "items": {},
+      "type": "array",
+      "title": "Professional Goals"
+     },
+     "strengths": {
+      "items": {},
+      "type": "array",
+      "title": "Strengths"
+     },
+     "preferences": {
+      "items": {},
+      "type": "array",
+      "title": "Preferences"
+     },
+     "constraints": {
+      "items": {},
+      "type": "array",
+      "title": "Constraints"
+     },
+     "aspirations": {
+      "items": {},
+      "type": "array",
+      "title": "Aspirations"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "unknowns": {
+      "items": {},
+      "type": "array",
+      "title": "Unknowns"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "candidate_id",
+     "version",
+     "career_direction",
+     "professional_goals",
+     "strengths",
+     "preferences",
+     "constraints",
+     "aspirations",
+     "summary",
+     "unknowns",
+     "confidence",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "ProfessionalIdentityOut"
+   },
+   "ProfessionalIdentityPatch": {
+    "properties": {
+     "career_direction": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Career Direction"
+     },
+     "professional_goals": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Professional Goals"
+     },
+     "strengths": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Strengths"
+     },
+     "preferences": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Preferences"
+     },
+     "constraints": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Constraints"
+     },
+     "aspirations": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Aspirations"
+     },
+     "summary": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Summary"
+     },
+     "unknowns": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unknowns"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
+     }
+    },
+    "type": "object",
+    "title": "ProfessionalIdentityPatch"
+   },
+   "RecommendationIn": {
+    "properties": {
+     "confrontation_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confrontation Id"
+     }
+    },
+    "type": "object",
+    "title": "RecommendationIn"
+   },
+   "RecommendationOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "confrontation_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confrontation Id"
+     },
+     "recommended_candidate_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "uuid"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Recommended Candidate Id"
+     },
+     "reasoning_summary": {
+      "type": "string",
+      "title": "Reasoning Summary"
+     },
+     "key_evidence": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Key Evidence"
+     },
+     "tradeoffs": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Tradeoffs"
+     },
+     "uncertainties": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Uncertainties"
+     },
+     "alternatives": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Alternatives"
+     },
+     "next_steps": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Next Steps"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "role_id",
+     "confrontation_id",
+     "recommended_candidate_id",
+     "reasoning_summary",
+     "key_evidence",
+     "tradeoffs",
+     "uncertainties",
+     "alternatives",
+     "next_steps",
+     "confidence",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "RecommendationOut"
+   },
+   "RoleCardOut": {
+    "properties": {
+     "role": {
+      "$ref": "#/components/schemas/RoleOut"
+     },
+     "company": {
+      "$ref": "#/components/schemas/CompanyOut"
+     },
+     "company_identity": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/CompanyIdentityOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "role_identity": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/RoleIdentityOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "success_model": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SuccessModelOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "missing_fields": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Missing Fields"
+     }
+    },
+    "type": "object",
+    "required": [
+     "role",
+     "company",
+     "company_identity",
+     "role_identity",
+     "success_model",
+     "missing_fields"
+    ],
+    "title": "RoleCardOut",
+    "description": "Everything the employer UI needs to render the Role Card in one call."
+   },
+   "RoleChoiceIn": {
+    "properties": {
+     "role": {
+      "type": "string",
+      "enum": [
+       "employer",
+       "candidate"
+      ],
+      "title": "Role"
+     },
+     "phone_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone Number"
+     }
+    },
+    "type": "object",
+    "required": [
+     "role"
+    ],
+    "title": "RoleChoiceIn"
+   },
+   "RoleIdentityOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "version": {
+      "type": "integer",
+      "title": "Version"
+     },
+     "mission": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mission"
+     },
+     "responsibilities": {
+      "items": {},
+      "type": "array",
+      "title": "Responsibilities"
+     },
+     "objectives": {
+      "items": {},
+      "type": "array",
+      "title": "Objectives"
+     },
+     "constraints": {
+      "items": {},
+      "type": "array",
+      "title": "Constraints"
+     },
+     "context": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Context"
+     },
+     "work_environment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Work Environment"
+     },
+     "stakeholders": {
+      "items": {},
+      "type": "array",
+      "title": "Stakeholders"
+     },
+     "success_factors": {
+      "items": {},
+      "type": "array",
+      "title": "Success Factors"
+     },
+     "unknowns": {
+      "items": {},
+      "type": "array",
+      "title": "Unknowns"
+     },
+     "assumptions": {
+      "items": {},
+      "type": "array",
+      "title": "Assumptions"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "role_id",
+     "version",
+     "mission",
+     "responsibilities",
+     "objectives",
+     "constraints",
+     "context",
+     "work_environment",
+     "stakeholders",
+     "success_factors",
+     "unknowns",
+     "assumptions",
+     "confidence",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "RoleIdentityOut"
+   },
+   "RoleIdentityPatch": {
+    "properties": {
+     "mission": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mission"
+     },
+     "responsibilities": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Responsibilities"
+     },
+     "objectives": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Objectives"
+     },
+     "constraints": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Constraints"
+     },
+     "context": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Context"
+     },
+     "work_environment": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Work Environment"
+     },
+     "stakeholders": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stakeholders"
+     },
+     "success_factors": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Success Factors"
+     },
+     "unknowns": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unknowns"
+     },
+     "assumptions": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assumptions"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
+     }
+    },
+    "type": "object",
+    "title": "RoleIdentityPatch"
+   },
+   "RoleIn": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "location": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Location"
+     },
+     "contract_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contract Type"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "open"
+     },
+     "constraints": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Constraints",
+      "examples": [
+       {
+        "location": "Dakar",
+        "start_before": "2027-01-15"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "title"
+    ],
+    "title": "RoleIn"
+   },
+   "RoleOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "company_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Company Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "location": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Location"
+     },
+     "contract_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Contract Type"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "constraints": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Constraints"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "company_id",
+     "title",
+     "location",
+     "contract_type",
+     "status",
+     "constraints",
+     "created_at"
+    ],
+    "title": "RoleOut"
+   },
+   "ShortlistEntryOut": {
+    "properties": {
+     "candidate_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Candidate Id"
+     },
+     "full_name": {
+      "type": "string",
+      "title": "Full Name"
+     },
+     "rank": {
+      "type": "integer",
+      "title": "Rank"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "candidate_id",
+     "full_name",
+     "rank",
+     "reason"
+    ],
+    "title": "ShortlistEntryOut"
+   },
+   "ShortlistIn": {
+    "properties": {
+     "k": {
+      "type": "integer",
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "K",
+      "default": 3
+     }
+    },
+    "type": "object",
+    "title": "ShortlistIn"
+   },
+   "ShortlistOut": {
+    "properties": {
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "summary": {
+      "type": "string",
+      "title": "Summary"
+     },
+     "shortlist": {
+      "items": {
+       "$ref": "#/components/schemas/ShortlistEntryOut"
+      },
+      "type": "array",
+      "title": "Shortlist"
+     },
+     "excluded": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Excluded"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     }
+    },
+    "type": "object",
+    "required": [
+     "role_id",
+     "summary",
+     "shortlist",
+     "excluded",
+     "produced_by"
+    ],
+    "title": "ShortlistOut"
+   },
+   "SuccessCondition": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "requires": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Requires",
+      "description": "capability keys that must ALL hold for this path"
+     },
+     "description": {
+      "type": "string",
+      "title": "Description",
+      "default": ""
+     },
+     "weight": {
+      "type": "number",
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Weight",
+      "description": "relative value of succeeding via this path (e.g. <1 when it implies ramp-up)",
+      "default": 1.0
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "requires"
+    ],
+    "title": "SuccessCondition"
+   },
+   "SuccessModelIn": {
+    "properties": {
+     "critical_outcomes": {
+      "anyOf": [
+       {
+        "items": {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Critical Outcomes"
+     },
+     "critical_capabilities": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/CapabilitySpec"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Critical Capabilities"
+     },
+     "required_behaviors": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Required Behaviors"
+     },
+     "success_conditions": {
+      "anyOf": [
+       {
+        "items": {
+         "$ref": "#/components/schemas/SuccessCondition"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Success Conditions"
+     },
+     "tradeoffs": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Tradeoffs"
+     },
+     "risks": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Risks"
+     },
+     "unknowns": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unknowns"
+     },
+     "priorities": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Priorities"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
+     }
+    },
+    "type": "object",
+    "title": "SuccessModelIn"
+   },
+   "SuccessModelOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "role_id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Role Id"
+     },
+     "version": {
+      "type": "integer",
+      "title": "Version"
+     },
+     "critical_outcomes": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Critical Outcomes"
+     },
+     "critical_capabilities": {
+      "items": {
+       "$ref": "#/components/schemas/CapabilitySpec"
+      },
+      "type": "array",
+      "title": "Critical Capabilities"
+     },
+     "required_behaviors": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Required Behaviors"
+     },
+     "success_conditions": {
+      "items": {
+       "$ref": "#/components/schemas/SuccessCondition"
+      },
+      "type": "array",
+      "title": "Success Conditions"
+     },
+     "tradeoffs": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Tradeoffs"
+     },
+     "risks": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Risks"
+     },
+     "unknowns": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Unknowns"
+     },
+     "priorities": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Priorities"
+     },
+     "confidence": {
+      "type": "number",
+      "title": "Confidence"
+     },
+     "produced_by": {
+      "type": "string",
+      "title": "Produced By"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "role_id",
+     "version",
+     "critical_outcomes",
+     "critical_capabilities",
+     "required_behaviors",
+     "success_conditions",
+     "tradeoffs",
+     "risks",
+     "unknowns",
+     "priorities",
+     "confidence",
+     "produced_by",
+     "created_at"
+    ],
+    "title": "SuccessModelOut"
+   },
+   "TurnOut": {
+    "properties": {
+     "user_message": {
+      "$ref": "#/components/schemas/MessageOut"
+     },
+     "assistant_message": {
+      "$ref": "#/components/schemas/MessageOut"
+     },
+     "intent": {
+      "type": "string",
+      "title": "Intent"
+     },
+     "updates": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Updates",
+      "description": "identity objects updated by this turn, e.g. role_identity"
+     },
+     "artifacts": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Artifacts",
+      "description": "objects produced (success_model, shortlist, confrontation...)"
+     }
+    },
+    "type": "object",
+    "required": [
+     "user_message",
+     "assistant_message",
+     "intent",
+     "updates",
+     "artifacts"
+    ],
+    "title": "TurnOut"
+   },
+   "UserOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "format": "uuid",
+      "title": "Id"
+     },
+     "email": {
+      "type": "string",
+      "title": "Email"
+     },
+     "phone_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Phone Number"
+     },
+     "role": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Role"
+     },
+     "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Created At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "email",
+     "phone_number",
+     "role",
+     "created_at"
+    ],
+    "title": "UserOut"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   }
+  },
+  "securitySchemes": {
+   "HTTPBearer": {
+    "type": "http",
+    "scheme": "bearer"
+   }
+  }
+ }
+}

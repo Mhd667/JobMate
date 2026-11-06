@@ -1,0 +1,67 @@
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --text: #1c1b18;
+  --muted: #6b675e;
+  --border: #e3e0d8;
+  --accent: #1f5c4a;
+  --accent-text: #ffffff;
+  --accent-soft: #e5efe9;
+  --danger: #a33a2c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151513;
+    --surface: #1f1f1c;
+    --text: #efede7;
+    --muted: #a19d93;
+    --border: #34332e;
+    --accent: #6fb79c;
+    --accent-text: #0f1f19;
+    --accent-soft: #23322c;
+    --danger: #e08a7d;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+.shell { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+.card {
+  width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 32px 28px;
+}
+.wide { max-width: 720px; }
+.brand { font-weight: 700; letter-spacing: -0.02em; font-size: 22px; margin: 0 0 4px; }
+.brand span { color: var(--accent); }
+h1 { font-size: 20px; margin: 20px 0 6px; letter-spacing: -0.01em; }
+p.lead { color: var(--muted); margin: 0 0 22px; font-size: 15px; }
+label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+input, textarea, select {
+  width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border);
+  border-radius: 9px; padding: 10px 12px;
+}
+input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+button.primary {
+  width: 100%; margin-top: 22px; padding: 11px; font: inherit; font-weight: 600; border: 0; border-radius: 9px;
+  background: var(--accent); color: var(--accent-text); cursor: pointer;
+}
+button.primary:disabled { opacity: 0.6; cursor: default; }
+button.link { background: none; border: 0; color: var(--accent); font: inherit; cursor: pointer; padding: 0; }
+.switch { margin-top: 18px; font-size: 14px; color: var(--muted); text-align: center; }
+.error { margin-top: 14px; color: var(--danger); font-size: 14px; }
+.info { margin-top: 14px; color: var(--accent); font-size: 14px; }
+.roles { display: grid; gap: 12px; margin-top: 8px; }
+.role {
+  text-align: left; font: inherit; color: var(--text); background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 12px; padding: 16px 18px; cursor: pointer;
+}
+.role[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.role strong { display: block; font-size: 16px; }
+.role span { color: var(--muted); font-size: 14px; }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.muted { color: var(--muted); font-size: 14px; }
