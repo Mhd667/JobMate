@@ -27,4 +27,11 @@ Le site tourne en mode production (moins gourmand en mémoire) et se recompile t
   correspond → « Ça m'intéresse » → quelques questions ou une mise en situation → JobMate revient vers lui
   avec la suite (entretien, retenu, ou non retenu).
 
+## Données de démonstration
+
+`seed.bat` crée les 15 comptes de `backend\seed\demo-users.csv` (fichier gardé hors de Git) et leurs profils
+synthétiques (`backend/seed/demo_profiles.py`) : 4 entreprises avec 5 offres, Baobab Conseil sans offre,
+9 candidats complets et candidate10 vierge. L'IA lit ensuite chaque CV (capacités et preuves) et construit le
+Success Model de chaque offre ; le matching n'est pas lancé, c'est à vous de le tester. Relançable sans risque.
+
 Infra : Supabase (Postgres + Auth), Vercel plus tard (deux projets : `backend` et `web`).

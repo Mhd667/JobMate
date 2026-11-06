@@ -107,8 +107,11 @@ def test_candidate_sources_card_and_cv_upload(demo):
     src = _card(turn, "sources")
     turn = _send(client, h, conv["id"], "Merci !")
     assert not turn["cards"]
-    apps = client.get("/candidates/me/applications", headers=h)
-    assert apps.status_code == 200 and apps.json() == []
+    # Profile ready -> matched against open offers that have a Success Model; the offer arrives in the chat.
+    apps = client.get("/candidates/me/applications", headers=h).json()
+    assert len(apps) == 1 and apps[0]["status"] == "new"
+    hist = client.get(f"/conversations/{conv['id']}", headers=h).json()["messages"]
+    assert any(c["type"] == "offer" for msg in hist for c in msg["meta"].get("cards", []))
     assert client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "javascript:x"}).status_code == 422
     r = client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "https://linkedin.com/in/awa"})
     assert r.status_code == 200 and all(x["verified"] is False for x in r.json()["sources"])

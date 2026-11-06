@@ -276,6 +276,9 @@ class CandidateTurnOutput(_M):
     intent: CandidateIntent = "inform"
     professional_identity_patch: ProfessionalIdentityPatch = Field(default_factory=ProfessionalIdentityPatch)
     asked_field: str | None = None
+    full_name: str | None = Field(None, description="the candidate's name, if they gave it")
+    headline: str | None = Field(None, description="short professional title, e.g. 'Téléconseillère – 4 ans de call center'")
+    location: str | None = Field(None, description="city where the candidate lives or wants to work")
     show_sources_card: bool = Field(
         False, description="true when inviting the candidate to share a CV, LinkedIn, portfolio or X profile")
 

@@ -35,7 +35,7 @@ OPENERS = {
     "employer": "Bonjour, je suis JobMate. Décrivez-moi votre besoin avec vos mots : le poste, le contexte, "
                 "l'urgence. Je m'occupe du reste.",
     "candidate": "Bonjour, je suis JobMate. Trois petites questions et votre profil est prêt. Pour commencer : "
-                 "quel type de poste recherchez-vous, et dans quelle ville ?",
+                 "comment vous appelez-vous, et quel type de poste recherchez-vous ?",
 }
 
 
@@ -276,6 +276,41 @@ def push_offers(db: Session, matches: list[m.Match]) -> None:
     db.flush()
 
 
+OFFER_TOP_K = 3
+
+
+def match_new_candidate(db: Session, candidate_id) -> list[m.Match]:
+    """A candidate joined or completed their profile: match them against the open offers that already have a
+    Success Model. An offer is sent when they would enter that offer's top 3; the employer is told."""
+    offered = []
+    roles = list(db.scalars(select(m.Role).where(m.Role.status == "open")))
+    for role in roles:
+        if current(db, m.SuccessModel, role.id) is None:
+            continue
+        try:
+            x = p.run_matching(db, role.id, [candidate_id])[0]
+        except Exception as e:  # matching must never break the candidate's conversation
+            import logging
+            logging.getLogger(__name__).warning("matching %s on %s failed: %s", candidate_id, role.id, e)
+            continue
+        others = list(db.scalars(select(m.Match.ui_score).where(
+            m.Match.role_id == role.id, m.Match.candidate_id != candidate_id, m.Match.ui_score.is_not(None))))
+        better = sum(1 for sc in others if sc > (x.ui_score or 0))
+        if x.ui_score is not None and better < OFFER_TOP_K:
+            offered.append(x)
+            employer_conv = db.scalars(select(m.Conversation).where(
+                m.Conversation.role_id == role.id, m.Conversation.kind == m.ConversationKind.employer)
+                .order_by(m.Conversation.created_at.desc())).first()
+            if employer_conv is not None:
+                name = db.get(m.Candidate, candidate_id).full_name
+                _assistant(db, employer_conv, f"Nouveau profil : {name} vient de rejoindre JobMate et correspond à "
+                                              f"votre offre « {role.title} » (match {x.ui_score} %). Je lui ai "
+                                              "proposé l'offre ; je vous préviens s'il est intéressé.",
+                           intent="candidate_update")
+    push_offers(db, offered)
+    return offered
+
+
 def _notify_employer(db: Session, role_id, candidate_id) -> None:
     conv = db.scalars(select(m.Conversation).where(m.Conversation.role_id == role_id,
                                                    m.Conversation.kind == m.ConversationKind.employer)
@@ -316,6 +351,12 @@ def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
         questions_left=questions_left))
     producer = p._producer(intel)
     updates = []
+    row = db.get(m.Candidate, conv.candidate_id)
+    basics = [f for f in ("full_name", "headline", "location") if getattr(turn, f) and getattr(turn, f) != getattr(row, f)]
+    for f in basics:
+        setattr(row, f, getattr(turn, f)[:200])
+    if basics:
+        updates.append({"entity": "candidate", "fields": basics})
     patch = turn.professional_identity_patch.model_dump(exclude_none=True)
     if patch:
         new_version(db, m.ProfessionalIdentity, conv.candidate_id, patch, producer, merge_lists=True)
@@ -337,6 +378,10 @@ def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
         _set_state(conv, flow="sources", sources_offered=True)
     elif questions_left == 0:
         _set_state(conv, flow="waiting")
+    if questions_left == 0 and not conv.state.get("matched_on_join"):
+        # Profile ready: look for open offers right away (offers then arrive as their own messages).
+        _set_state(conv, matched_on_join=True)
+        match_new_candidate(db, conv.candidate_id)
     artifacts = []
     if turn.intent == "request_opportunities":
         artifacts.append({"type": "opportunities", "candidate_id": str(conv.candidate_id)})
@@ -515,6 +560,7 @@ def _candidate_action(db, conv, msg, cd, action, payload) -> dict:
             raise HTTPException(400, "Ajoutez un CV ou un lien avant de valider.")
         p.understand_candidate(db, conv.candidate_id)
         _set_state(conv, flow="profile")
+        match_new_candidate(db, conv.candidate_id)
         assistant = _assistant(db, conv, "Merci, j'ai enrichi votre profil avec ces informations. Ce que vous "
                                          "déclarez reste marqué comme déclaratif tant qu'il n'est pas vérifié.",
                                intent="sources_added")
