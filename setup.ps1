@@ -17,7 +17,7 @@ if (-not (Test-Path $webEnv)) {
   @"
 NEXT_PUBLIC_SUPABASE_URL=https://mdiucfqnqavplfflzbfv.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_mA0e5QwJUcdLmGqkgGrW3A_zlAgkynV
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=/api
 "@ | Set-Content -Encoding ascii $webEnv
   Write-Host "   web\.env.local cree." -ForegroundColor Green
 } else {

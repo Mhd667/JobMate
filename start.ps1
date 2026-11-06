@@ -23,6 +23,16 @@ if (-not (Test-Path (Join-Path $root "web\node_modules"))) {
   exit 1
 }
 
+# --- the site calls the backend through its own /api route (works from a phone on the same Wi-Fi)
+$webEnv = Join-Path $root "web\.env.local"
+if (Test-Path $webEnv) {
+  $envText = Get-Content $webEnv -Raw
+  if ($envText -match "NEXT_PUBLIC_API_URL=http://localhost:8000") {
+    ($envText -replace "NEXT_PUBLIC_API_URL=http://localhost:8000", "NEXT_PUBLIC_API_URL=/api") | Set-Content -Encoding ascii $webEnv
+    if (Test-Path (Join-Path $root "web\.next\jobmate-commit.txt")) { Remove-Item (Join-Path $root "web\.next\jobmate-commit.txt") }
+  }
+}
+
 # --- backend
 Write-Host "Demarrage du backend sur http://localhost:8000 ..." -ForegroundColor Cyan
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "`$host.UI.RawUI.WindowTitle='JobMate backend'; Set-Location '$root\backend'; py -m uvicorn app.main:app --port 8000"
@@ -55,4 +65,11 @@ if (Wait-Url "http://localhost:8000/health" "Le backend") {
 if (Wait-Url "http://localhost:3000/login" "Le site") {
   Start-Process "http://localhost:3000"
   Write-Host "JobMate est lance. Pour l'arreter, fermez les deux fenetres 'JobMate backend' et 'JobMate site'." -ForegroundColor Green
+  $ip = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+         Where-Object { $_.IPAddress -notlike "127.*" -and $_.IPAddress -notlike "169.254.*" -and $_.PrefixOrigin -ne "WellKnown" } |
+         Select-Object -First 1).IPAddress
+  if ($ip) {
+    Write-Host "Depuis votre telephone (meme Wi-Fi) : http://${ip}:3000" -ForegroundColor Green
+    Write-Host "(Si Windows demande l'acces reseau pour Node.js, cliquez sur Autoriser.)" -ForegroundColor Green
+  }
 }

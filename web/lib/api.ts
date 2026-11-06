@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-const API = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/$/, "");
+const API = (process.env.NEXT_PUBLIC_API_URL || "/api").replace(/\/$/, "");
 
 export type Role = "employer" | "candidate";
 export type NextStep = "choose_role" | "create_company" | "employer_home" | "create_profile" | "candidate_home";
