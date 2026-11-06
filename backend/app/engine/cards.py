@@ -89,7 +89,8 @@ def _years_of_experience(db: Session, candidate_id) -> int | None:
 def _skills(db: Session, candidate_id, match: m.Match) -> list[str]:
     names = [c.name for c in db.scalars(select(m.Capability).where(m.Capability.candidate_id == candidate_id))]
     if not names:
-        names = [s if isinstance(s, str) else s.get("name") or s.get("claim", "") for s in match.strengths]
+        names = [(s if isinstance(s, str) else s.get("name") or s.get("claim", "")).split(" : ")[0]
+                 for s in match.strengths]
     return [n for n in names if n][:6]
 
 

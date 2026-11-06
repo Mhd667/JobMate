@@ -53,7 +53,18 @@ def _turn(user_msg, assistant, intent, updates=None, artifacts=None, conv=None) 
             "flow_state": (conv.state or {}).get("flow") if conv else None}
 
 
+SINGLE_OPEN = {"missions", "role_summary", "sources"}
+
+
 def _assistant(db, conv, text, cards=None, **meta) -> m.Message:
+    # A new missions / role summary card replaces the previous unanswered one.
+    fresh = {cd["type"] for cd in (cards or [])} & SINGLE_OPEN
+    if fresh:
+        for msg in db.scalars(select(m.Message).where(m.Message.conversation_id == conv.id,
+                                                      m.Message.sender == "assistant")):
+            for cd in (msg.meta or {}).get("cards", []):
+                if cd["type"] in fresh and cd["status"] == "open":
+                    close_card(msg, cd["id"], {"action": "superseded"})
     return _post(db, conv, "assistant", text, {**meta, "cards": cards or []})
 
 
@@ -355,6 +366,7 @@ def _employer_action(db, conv, msg, cd, action, payload) -> dict:
             raise HTTPException(400, "Sélectionnez au moins une mission.")
         close_card(msg, cd["id"], {"selected": selected})
         new_version(db, m.RoleIdentity, conv.role_id, {"responsibilities": selected}, "manual", merge_lists=True)
+        _set_state(conv, asked_field=None)  # already recorded: the next turn must not re-file this text
         return employer_message(db, conv, "Missions principales : " + ", ".join(selected) + ".")
 
     if action == "role_summary.edit":

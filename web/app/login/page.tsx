@@ -1,43 +1,56 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-import { api, Me, routeFor } from "@/lib/api";
+import { FormEvent, useEffect, useState } from "react";
+import { landing, Role, savePendingRole } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { Briefcase, Users } from "@/components/Icons";
 
-export default function Login() {
+export default function Access() {
   const router = useRouter();
+  const [role, setRole] = useState<Role | null>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  async function goNext() {
-    const me = await api<Me>("/auth/me");
-    router.replace(routeFor[me.next_step]);
-  }
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) landing().then((to) => router.replace(to)).catch(() => undefined);
+    });
+  }, [router]);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    if (!role) {
+      setError("Choisissez d'abord votre profil : Employeur ou Chercheur d'emploi.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setInfo(null);
     try {
+      savePendingRole({ role, full_name: fullName.trim() || undefined, phone_number: phone.trim() || undefined });
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        await goNext();
       } else {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: { emailRedirectTo: `${window.location.origin}/`, data: { jobmate_role: role } },
         });
         if (error) throw error;
-        if (data.session) await goNext();
-        else setInfo("Compte créé. Confirme ton adresse via l'e-mail reçu, puis connecte-toi.");
+        if (!data.session) {
+          setInfo("Compte créé. Confirmez votre adresse grâce à l'e-mail reçu, puis connectez-vous ici.");
+          setMode("login");
+          return;
+        }
       }
+      router.replace(await landing());
     } catch (err) {
       setError(translate(err instanceof Error ? err.message : String(err)));
     } finally {
@@ -46,33 +59,67 @@ export default function Login() {
   }
 
   return (
-    <main className="shell">
-      <form className="card" onSubmit={submit}>
-        <p className="brand">Job<span>Mate</span></p>
-        <h1>{mode === "login" ? "Connexion" : "Créer un compte"}</h1>
-        <p className="lead">
-          {mode === "login"
-            ? "Content de te revoir."
-            : "Recruteur ou candidat : tu choisiras ton rôle à l'étape suivante."}
-        </p>
-        <label htmlFor="email">Adresse e-mail</label>
-        <input id="email" type="email" autoComplete="email" required value={email}
-               onChange={(e) => setEmail(e.target.value)} />
-        <label htmlFor="password">Mot de passe</label>
-        <input id="password" type="password" required minLength={8}
-               autoComplete={mode === "login" ? "current-password" : "new-password"}
-               value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button className="primary" disabled={busy}>
-          {busy ? "…" : mode === "login" ? "Se connecter" : "Créer mon compte"}
-        </button>
-        {error && <p className="error">{error}</p>}
-        {info && <p className="info">{info}</p>}
-        <p className="switch">
-          {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
-          <button type="button" className="link" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
-            {mode === "login" ? "S'inscrire" : "Se connecter"}
+    <main className="access">
+      <form className="access-card glass" onSubmit={submit} noValidate={false}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="logo" src="/logo.png" alt="JobMate" />
+        <h1>Bienvenue</h1>
+        <p className="lead">Qui êtes-vous ?</p>
+
+        <div className="roles" role="group" aria-label="Votre profil">
+          <button type="button" className="role-tile" aria-pressed={role === "employer"} onClick={() => setRole("employer")}>
+            <span className="ico"><Briefcase /></span>
+            <strong>Employeur</strong>
+            <span>Je recrute pour mon entreprise</span>
           </button>
-        </p>
+          <button type="button" className="role-tile" aria-pressed={role === "candidate"} onClick={() => setRole("candidate")}>
+            <span className="ico"><Users /></span>
+            <strong>Chercheur d&apos;emploi</strong>
+            <span>Je cherche un poste qui me correspond</span>
+          </button>
+        </div>
+
+        {role && (
+          <>
+            <div className="tabs" role="tablist" aria-label="Connexion ou inscription">
+              <button type="button" role="tab" aria-selected={mode === "login"} onClick={() => setMode("login")}>Se connecter</button>
+              <button type="button" role="tab" aria-selected={mode === "signup"} onClick={() => setMode("signup")}>Créer un compte</button>
+            </div>
+
+            {mode === "signup" && role === "candidate" && (
+              <div className="field">
+                <label htmlFor="name">Nom complet</label>
+                <input id="name" className="input" autoComplete="name" required value={fullName}
+                       onChange={(e) => setFullName(e.target.value)} />
+                <span className="hint">C&apos;est le nom que verront les recruteurs.</span>
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="email">Adresse e-mail</label>
+              <input id="email" className="input" type="email" autoComplete="email" required value={email}
+                     onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            {mode === "signup" && (
+              <div className="field">
+                <label htmlFor="phone">Téléphone <span className="hint">(facultatif)</span></label>
+                <input id="phone" className="input" type="tel" autoComplete="tel" placeholder="+221 …" value={phone}
+                       onChange={(e) => setPhone(e.target.value)} />
+              </div>
+            )}
+            <div className="field">
+              <label htmlFor="password">Mot de passe</label>
+              <input id="password" className="input" type="password" required minLength={8}
+                     autoComplete={mode === "login" ? "current-password" : "new-password"}
+                     value={password} onChange={(e) => setPassword(e.target.value)} />
+              {mode === "signup" && <span className="hint">8 caractères minimum.</span>}
+            </div>
+            <button className="btn primary block" disabled={busy}>
+              {busy ? "Un instant…" : mode === "login" ? "Se connecter" : "Créer mon compte"}
+            </button>
+          </>
+        )}
+        {error && <p className="notice error" role="alert">{error}</p>}
+        {info && <p className="notice info" role="status">{info}</p>}
       </form>
     </main>
   );
@@ -80,8 +127,9 @@ export default function Login() {
 
 function translate(msg: string): string {
   if (/invalid login credentials/i.test(msg)) return "E-mail ou mot de passe incorrect.";
-  if (/email not confirmed/i.test(msg)) return "Adresse e-mail pas encore confirmée : vérifie ta boîte mail.";
-  if (/already registered/i.test(msg)) return "Un compte existe déjà avec cette adresse.";
-  if (/password should be at least/i.test(msg)) return "Le mot de passe est trop court.";
+  if (/email not confirmed/i.test(msg)) return "Adresse e-mail pas encore confirmée : vérifiez votre boîte mail.";
+  if (/already registered/i.test(msg)) return "Un compte existe déjà avec cette adresse. Connectez-vous.";
+  if (/password should be at least/i.test(msg)) return "Le mot de passe est trop court (8 caractères minimum).";
+  if (/rate limit/i.test(msg)) return "Trop de tentatives. Patientez quelques minutes.";
   return msg;
 }

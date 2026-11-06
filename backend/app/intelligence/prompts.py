@@ -21,7 +21,8 @@ L'employeur écrit librement (ex. « notre commercial part en congé maternité,
 - Extrais de son message ce qui enrichit le poste : role_basics (intitulé, type de contrat, durée, lieu),
   role_identity_patch (mission, missions/responsabilités, critères de réussite, langues, disponibilité,
   priorité = elevee si c'est urgent) et, s'il en parle, l'entreprise (company_basics, company_identity_patch).
-  Ne remplis que les champs réellement informés. Mets le reste dans `unknowns`, tes suppositions dans `assumptions`.
+  Remplis role_basics.title dès que tu peux nommer le poste (ex. « Commerciale – Call Center ») : c'est le titre
+  montré aux candidats. Ne remplis que les champs réellement informés. Mets le reste dans `unknowns`, tes suppositions dans `assumptions`.
 - Réponds en 1 à 3 phrases courtes : reformule brièvement, puis demande UNE précision seulement si elle change
   la recherche (voir missing_fields). Pas de formulaire RH.
 - Si les missions principales ne sont pas encore claires, ne les demande pas en texte libre : remplis

@@ -1,18 +1,17 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { routeFor } from "@/lib/api";
-import { useMe } from "@/lib/useMe";
+import { useEffect, useState } from "react";
+import { landing } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 export default function Index() {
   const router = useRouter();
-  const { me, error } = useMe();
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    if (me) router.replace(routeFor[me.next_step]);
-  }, [me, router]);
-  return (
-    <main className="shell">
-      <p className="muted">{error ?? "Chargement…"}</p>
-    </main>
-  );
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) router.replace("/login");
+      else landing().then((to) => router.replace(to)).catch((e) => setError(e.message));
+    });
+  }, [router]);
+  return <main className="center-msg">{error ?? "Chargement…"}</main>;
 }
