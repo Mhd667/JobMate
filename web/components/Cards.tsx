@@ -291,6 +291,7 @@ function Sources({ card, act, busy }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [linkedin, setLinkedin] = useState("");
   const [portfolio, setPortfolio] = useState("");
+  const [xProfile, setXProfile] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -305,7 +306,7 @@ function Sources({ card, act, busy }: Props) {
         fd.append("file", file);
         await api("/candidates/me/cv", { method: "POST", body: fd });
       }
-      for (const [kind, url] of [["linkedin", linkedin], ["portfolio", portfolio]] as const) {
+      for (const [kind, url] of [["linkedin", linkedin], ["portfolio", portfolio], ["x", xProfile]] as const) {
         if (url.trim()) {
           const u = /^https?:\/\//.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
           await api("/candidates/me/sources", { method: "POST", body: JSON.stringify({ kind, url: u }) });
@@ -347,10 +348,15 @@ function Sources({ card, act, busy }: Props) {
             <input id={`pf-${card.id}`} className="input" type="url" inputMode="url" placeholder="https://…"
                    value={portfolio} onChange={(e) => setPortfolio(e.target.value)} />
           </div>
+          <div className="field">
+            <label htmlFor={`x-${card.id}`}>Profil X (Twitter)</label>
+            <input id={`x-${card.id}`} className="input" type="url" inputMode="url" placeholder="x.com/…"
+                   value={xProfile} onChange={(e) => setXProfile(e.target.value)} />
+          </div>
           {err && <p className="notice error" role="alert">{err}</p>}
           <div className="card-actions">
             <button className="btn" disabled={busy || saving} onClick={() => act(card, "sources.skip")}>Plus tard</button>
-            <button className="btn primary" disabled={busy || saving || (!file && !linkedin.trim() && !portfolio.trim())}
+            <button className="btn primary" disabled={busy || saving || (!file && !linkedin.trim() && !portfolio.trim() && !xProfile.trim())}
                     onClick={submit}>{saving ? "Envoi…" : "Ajouter"}</button>
           </div>
         </>
@@ -364,7 +370,7 @@ function Offer({ card, act, busy }: Props) {
   const contract = [d.contract, d.duration].filter(Boolean).join(" · ");
   const result = card.result?.action as string | undefined;
   return (
-    <section className="card" aria-label="Offre">
+    <section className="card" aria-label="Offre" id={`offer-${d.match_id}`}>
       <div className="card-head">
         <span className="card-ico"><I.Briefcase /></span>
         <div style={{ flex: 1 }}>

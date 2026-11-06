@@ -29,12 +29,13 @@ from app.intelligence import contracts as c
 from app.intelligence.interface import get_intelligence
 
 ASSESSMENT_QUESTIONS = 2
+PROFILE_QUESTIONS = 3
 
 OPENERS = {
     "employer": "Bonjour, je suis JobMate. Décrivez-moi votre besoin avec vos mots : le poste, le contexte, "
                 "l'urgence. Je m'occupe du reste.",
-    "candidate": "Bonjour, je suis JobMate. Dites-moi ce que vous recherchez : le type de poste, le secteur, "
-                 "la ville. Je construirai votre profil au fil de la conversation.",
+    "candidate": "Bonjour, je suis JobMate. Trois petites questions et votre profil est prêt. Pour commencer : "
+                 "quel type de poste recherchez-vous, et dans quelle ville ?",
 }
 
 
@@ -305,9 +306,14 @@ def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
     cb, intel = ContextBuilder(db), get_intelligence()
     user_msg = _post(db, conv, "user", content)
     cand = cb.candidate(conv.candidate_id)
+    # Getting to know the candidate: 3 questions in all (the opener is the first), then sources, then waiting.
+    answered = int(conv.state.get("answers", 0)) + 1
+    questions_left = max(0, PROFILE_QUESTIONS - answered)
+    _set_state(conv, answers=answered)
     turn = intel.candidate_turn(c.CandidateConversationContext(
         candidate=cand, history=cb.history(conv.id), user_message=content,
-        last_asked_field=conv.state.get("asked_field"), missing_fields=cb.missing_candidate_fields(cand)))
+        last_asked_field=conv.state.get("asked_field"), missing_fields=cb.missing_candidate_fields(cand),
+        questions_left=questions_left))
     producer = p._producer(intel)
     updates = []
     patch = turn.professional_identity_patch.model_dump(exclude_none=True)
@@ -326,9 +332,11 @@ def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
     links = _save_links(db, conv.candidate_id, content)
     if links:
         updates.append({"entity": "candidate_sources", "added": links})
-    elif turn.show_sources_card:
+    if (turn.show_sources_card or questions_left == 0) and not conv.state.get("sources_offered"):
         cards.append(k.sources_card())
-        _set_state(conv, flow="sources")
+        _set_state(conv, flow="sources", sources_offered=True)
+    elif questions_left == 0:
+        _set_state(conv, flow="waiting")
     artifacts = []
     if turn.intent == "request_opportunities":
         artifacts.append({"type": "opportunities", "candidate_id": str(conv.candidate_id)})
@@ -336,7 +344,16 @@ def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
     return _turn(user_msg, assistant, turn.intent, updates, artifacts, conv)
 
 
-_URL = re.compile(r"(https?://[^\s<>\"']+|(?:www\.)?linkedin\.com/[^\s<>\"']+)", re.I)
+_URL = re.compile(r"(https?://[^\s<>\"']+|(?:www\.)?(?:linkedin\.com|x\.com|twitter\.com)/[^\s<>\"']+)", re.I)
+
+
+def _link_kind(url: str) -> str:
+    u = url.lower()
+    if "linkedin.com" in u:
+        return "linkedin"
+    if re.search(r"//(www\.)?(x|twitter)\.com/", u):
+        return "x"
+    return "portfolio"
 
 
 def _save_links(db: Session, candidate_id, text: str) -> list[dict]:
@@ -345,7 +362,7 @@ def _save_links(db: Session, candidate_id, text: str) -> list[dict]:
     for raw in _URL.findall(text or ""):
         url = raw.rstrip(".,;)")
         url = url if url.lower().startswith("http") else f"https://{url}"
-        found.append({"kind": "linkedin" if "linkedin.com" in url.lower() else "portfolio", "url": url[:500],
+        found.append({"kind": _link_kind(url), "url": url[:500],
                       "added_at": datetime.now(timezone.utc).isoformat(), "verified": False})
     if not found:
         return []

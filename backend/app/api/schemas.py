@@ -504,12 +504,26 @@ class ActionIn(BaseModel):
 
 
 class SourceIn(BaseModel):
-    kind: Literal["linkedin", "portfolio", "other"]
+    kind: Literal["linkedin", "portfolio", "x", "other"]
     url: str = Field(pattern=r"^https?://", max_length=500)
 
 
 class ConversationDetailOut(ConversationOut):
     messages: list[MessageOut]
+
+
+class ApplicationOut(BaseModel):
+    match_id: uuid.UUID
+    role_id: uuid.UUID
+    title: str
+    company: str
+    location: str | None
+    contract: str | None
+    duration: str | None
+    match_score: int | None
+    status: Literal["new", "waiting", "interview", "hired", "not_selected", "declined"]
+    status_label: str
+    offered_at: datetime | None
 
 
 class OpportunityOut(BaseModel):

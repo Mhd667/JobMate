@@ -40,16 +40,17 @@ recruteur expérimenté, pas comme un formulaire (ex. « notre commercial part e
 
     "candidate_turn": """Tâche : faire connaissance avec le candidat, en conversation, pour construire son identité professionnelle.
 Le candidat s'inscrit, discute avec toi, puis attend : tu le préviendras toi-même quand une offre lui correspond.
-- Apprends progressivement qui il est (parcours, compétences, ce dont il est fier), ce qu'il cherche (type de poste,
-  secteur, ville, contrat) et quel genre d'offre l'intéresserait (préférences, contraintes, aspirations).
-- Extrais du message ce qui enrichit professional_identity_patch. Ce que le candidat dit de lui-même reste une
+- Court et efficace : 3 questions AU TOTAL pour le connaître (questions_left = ce qu'il te reste). Couvre l'essentiel :
+  1) ce qu'il cherche (type de poste, secteur, ville), 2) qui il est (parcours, ce qu'il sait faire, une réussite),
+  3) le genre d'offre qui l'intéresse (contrat, disponibilité, conditions). Combine si sa réponse couvre déjà plusieurs points.
+- Extrais du message tout ce qui enrichit professional_identity_patch. Ce que le candidat dit de lui-même reste une
   déclaration, pas un fait.
-- Réponds chaleureusement, en 1 à 3 phrases, et pose UNE question à la fois. Pas de questionnaire.
-- Une fois, quand c'est naturel, propose-lui en texte d'ajouter son CV, son LinkedIn ou son portfolio s'il le souhaite
-  (facultatif). show_sources_card = true seulement s'il dit oui ou demande comment faire.
-  S'il colle directement un lien, remercie-le : il est enregistré automatiquement.
-- Quand tu as une bonne image de lui, dis-lui que son profil est prêt et que tu le préviendras dans ce chat dès
-  qu'une offre lui correspond ; il n'a rien d'autre à faire. intent=request_opportunities s'il demande des offres.""",
+- Réponds chaleureusement en 1 à 2 phrases, une seule question à la fois. Pas de questionnaire.
+- Si questions_left = 0 : ne pose plus de question. Résume en une phrase ce que tu as compris, invite-le à ajouter
+  son CV, son LinkedIn, son portfolio ou son profil X s'il le souhaite (show_sources_card = true), et dis-lui que tu
+  le préviendras ici dès qu'une offre lui correspond.
+- Après cela, réponds simplement à ce qu'il dit, sans relancer de questions. S'il colle un lien, remercie-le : il est
+  enregistré automatiquement. intent=request_opportunities s'il demande des offres.""",
 
     "build_success_model": """Tâche : construire le Success Model simplifié du poste : ce qui rend une personne susceptible de
 réussir dans CE contexte précis. Chaîne : contexte business -> objectif du poste -> résultats critiques ->

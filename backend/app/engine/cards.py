@@ -156,7 +156,7 @@ def recommendation_card(db: Session, rec: m.Recommendation) -> dict:
 # --------------------------------------------------------------------------- candidate
 def sources_card() -> dict:
     return card("sources", {"question": "Pour compléter votre profil, vous pouvez ajouter (facultatif) :",
-                            "fields": ["cv", "linkedin", "portfolio"]},
+                            "fields": ["cv", "linkedin", "portfolio", "x"]},
                 [action("sources.submit", "Ajouter", "primary"), action("sources.skip", "Plus tard")])
 
 

@@ -73,6 +73,8 @@ def test_employer_and_candidate_journeys(demo):
     assert offers and offers[0]["data"]["explanation"] is not None
     assert any("entretien" in msg["content"] for msg in detail["messages"])
 
+    apps = client.get("/candidates/me/applications", headers=ch).json()
+    assert apps and apps[0]["status"] == "interview" and apps[0]["status_label"] == "Entretien"
     turn = _act(client, ch, detail["id"], offers[0], "offer.interested")
     q1 = _card(turn, "assessment")
     assert turn["flow_state"] == "assessment" and q1["data"]["index"] == 1 and q1["data"]["total"] == 2
@@ -98,10 +100,15 @@ def test_candidate_sources_card_and_cv_upload(demo):
     _send(client, h, conv["id"], "Je cherche un poste de commerciale en fintech à Dakar.")
     turn = _send(client, h, conv["id"], "Je sais convaincre et je reste calme avec les clients difficiles.")
     assert not turn["cards"]  # no card pushed: sources are optional and offered in words
-    turn = _send(client, h, conv["id"], "Voici mon profil : https://www.linkedin.com/in/awa-mbaye")
+    # Third answer: no more questions, the optional sources card is offered once.
+    turn = _send(client, h, conv["id"], "Un CDI à Dakar. Mon profil : https://www.linkedin.com/in/awa-mbaye et x.com/awa")
     assert turn["updates"][-1]["entity"] == "candidate_sources"
-    turn = _send(client, h, conv["id"], "Je veux bien ajouter mon CV.")
+    assert {x["kind"] for x in turn["updates"][-1]["added"]} == {"linkedin", "x"}
     src = _card(turn, "sources")
+    turn = _send(client, h, conv["id"], "Merci !")
+    assert not turn["cards"]
+    apps = client.get("/candidates/me/applications", headers=h)
+    assert apps.status_code == 200 and apps.json() == []
     assert client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "javascript:x"}).status_code == 422
     r = client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "https://linkedin.com/in/awa"})
     assert r.status_code == 200 and all(x["verified"] is False for x in r.json()["sources"])

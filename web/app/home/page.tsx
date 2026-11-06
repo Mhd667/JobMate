@@ -14,6 +14,13 @@ const HELLO_SUB = {
 };
 
 interface Failure { text: string; retry?: () => void }
+interface Application {
+  match_id: string; title: string; company: string; location: string | null; match_score: number | null;
+  status: "new" | "waiting" | "interview" | "hired" | "not_selected" | "declined"; status_label: string;
+}
+const STATUS_CLASS: Record<Application["status"], string> = {
+  new: "", waiting: "grey", interview: "", hired: "green", not_selected: "grey", declined: "grey",
+};
 
 export default function Chat() {
   const router = useRouter();
@@ -28,6 +35,23 @@ export default function Chat() {
   const [sidebar, setSidebar] = useState(false);
   const [menu, setMenu] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
+  const [apps, setApps] = useState<Application[]>([]);
+
+  // Candidate sidebar: the offers JobMate sent and where each one stands.
+  useEffect(() => {
+    if (kind !== "candidate") return;
+    api<Application[]>("/candidates/me/applications").then(setApps).catch(() => undefined);
+  }, [kind, messages.length]);
+
+  function openApplication(a: Application) {
+    if (!window.matchMedia("(min-width: 861px)").matches) setSidebar(false);
+    const el = document.getElementById(`offer-${a.match_id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("flash");
+      setTimeout(() => el.classList.remove("flash"), 1600);
+    }
+  }
 
   // ------------------------------------------------------------------ loading
   useEffect(() => {
@@ -173,30 +197,47 @@ export default function Chat() {
 
   return (
     <div className="app">
-      {isEmployer && (
-        <>
-          <aside className={`sidebar${sidebar ? "" : " collapsed"}`} aria-label="Navigation" aria-hidden={!sidebar}>
-            <div className="sidebar-head">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="JobMate" />
-              <button className="icon-btn" aria-label="Replier la barre latérale" onClick={() => setSidebar(false)}
-                      tabIndex={sidebar ? 0 : -1}><I.ChevronLeft /></button>
-            </div>
-            <button className="new-btn" onClick={newRecruitment} tabIndex={sidebar ? 0 : -1}>
-              <I.Plus /> Nouveau recrutement
-            </button>
-          </aside>
-          {sidebar && <div className="scrim" onClick={() => setSidebar(false)} aria-hidden />}
-        </>
-      )}
+      <aside className={`sidebar${sidebar ? "" : " collapsed"}`} aria-label="Navigation" aria-hidden={!sidebar}>
+        <div className="sidebar-head">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="JobMate" />
+          <button className="icon-btn" aria-label="Replier la barre latérale" onClick={() => setSidebar(false)}
+                  tabIndex={sidebar ? 0 : -1}><I.ChevronLeft /></button>
+        </div>
+        {isEmployer ? (
+          <button className="new-btn" onClick={newRecruitment} tabIndex={sidebar ? 0 : -1}>
+            <I.Plus /> Nouveau recrutement
+          </button>
+        ) : (
+          <nav className="apps" aria-label="Mes candidatures">
+            <h2>Mes candidatures</h2>
+            {apps.length === 0 ? (
+              <p className="apps-empty">Aucune pour l&apos;instant. Je vous préviens dans le chat dès qu&apos;une offre vous correspond.</p>
+            ) : (
+              <ul>
+                {apps.map((a) => (
+                  <li key={a.match_id}>
+                    <button className="app-item" onClick={() => openApplication(a)} tabIndex={sidebar ? 0 : -1}>
+                      <span className="app-title">{a.title}</span>
+                      <span className="app-sub">{[a.company, a.location].filter(Boolean).join(" · ")}</span>
+                      <span className={`badge ${STATUS_CLASS[a.status]}`}>{a.status_label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </nav>
+        )}
+      </aside>
+      {sidebar && <div className="scrim" onClick={() => setSidebar(false)} aria-hidden />}
 
       <main className="main">
         <header className="topbar">
-          {isEmployer && !sidebar ? (
+          {!sidebar ? (
             <button className="icon-btn" aria-label="Ouvrir la barre latérale" onClick={() => setSidebar(true)}><I.Menu /></button>
           ) : <span style={{ width: 40 }} />}
           <div className="title">
-            {(!isEmployer || !sidebar) && (
+            {!sidebar && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src="/logo.png" alt="JobMate" />
             )}

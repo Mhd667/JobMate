@@ -136,6 +136,7 @@ class CandidateConversationContext(_M):
     user_message: str
     last_asked_field: str | None = None
     missing_fields: list[str] = Field(default_factory=list)
+    questions_left: int = Field(3, description="questions JobMate may still ask to get to know the candidate (0 = stop asking)")
 
 
 class SuccessModelContext(_M):
@@ -276,7 +277,7 @@ class CandidateTurnOutput(_M):
     professional_identity_patch: ProfessionalIdentityPatch = Field(default_factory=ProfessionalIdentityPatch)
     asked_field: str | None = None
     show_sources_card: bool = Field(
-        False, description="true only if the candidate wants to share a CV, LinkedIn or portfolio now")
+        False, description="true when inviting the candidate to share a CV, LinkedIn, portfolio or X profile")
 
 
 class SuccessModelDraft(_M):

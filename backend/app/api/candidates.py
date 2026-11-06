@@ -77,6 +77,40 @@ async def upload_cv(file: UploadFile = File(...), user=Depends(current_user), db
     return cand
 
 
+STATUS_LABELS = {"new": "Nouvelle offre", "waiting": "En attente du retour", "interview": "Entretien",
+                 "hired": "Retenu(e)", "not_selected": "Non retenu(e)", "declined": "Déclinée"}
+
+
+def _application_status(x: m.Match) -> str:
+    if x.employer_status == "hired":
+        return "hired"
+    if x.employer_status == "passed":
+        return "not_selected"
+    if x.employer_status == "interview":
+        return "interview"
+    if x.candidate_status == "declined":
+        return "declined"
+    if x.candidate_status == "interested":
+        return "waiting"
+    return "new"
+
+
+@router.get("/candidates/me/applications", response_model=list[s.ApplicationOut])
+def my_applications(user=Depends(current_user), db: Session = Depends(get_db)):
+    """The candidate's sidebar: offers JobMate sent them and where each one stands."""
+    cand = my_candidate(db, user)
+    out = []
+    for x in db.scalars(select(m.Match).where(m.Match.candidate_id == cand.id, m.Match.offered_at.is_not(None))
+                        .order_by(m.Match.offered_at.desc())):
+        role = db.get(m.Role, x.role_id)
+        st = _application_status(x)
+        out.append(s.ApplicationOut(match_id=x.id, role_id=role.id, title=role.title, company=role.company.name,
+                                    location=role.location or role.company.city, contract=role.contract_type,
+                                    duration=role.duration, match_score=x.ui_score, status=st,
+                                    status_label=STATUS_LABELS[st], offered_at=x.offered_at))
+    return out
+
+
 def _profile(db: Session, cand: m.Candidate) -> s.CandidateProfileOut:
     q = lambda model: list(db.scalars(select(model).where(model.candidate_id == cand.id)))  # noqa: E731
     return s.CandidateProfileOut(candidate=cand, professional_identity=current(db, m.ProfessionalIdentity, cand.id),

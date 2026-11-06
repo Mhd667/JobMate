@@ -214,6 +214,11 @@ class HeuristicIntelligence:
             patch = _fill(ctx.last_asked_field, msg)
         elif len(msg) > 3:
             patch = {"summary": msg}
+        if ctx.questions_left <= 0:
+            return c.CandidateTurnOutput(
+                reply="Merci, j'ai une bonne image de votre profil. Vous pouvez ajouter votre CV, LinkedIn, portfolio "
+                      "ou profil X si vous le souhaitez. Je vous préviens ici dès qu'une offre vous correspond.",
+                professional_identity_patch=c.ProfessionalIdentityPatch(**patch), show_sources_card=True)
         missing = [f for f in ctx.missing_fields if f != ctx.last_asked_field]
         if missing:
             return c.CandidateTurnOutput(reply=("Merci. " if patch else "") + CANDIDATE_Q.get(missing[0], "Dites-m'en plus ?"),
