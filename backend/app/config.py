@@ -5,6 +5,24 @@ import os
 from dataclasses import dataclass, field
 
 
+def _load_dotenv() -> None:
+    """Load backend/.env into the environment (real env vars win). No extra dependency."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8-sig") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            value = value.strip().strip('"').strip("'")
+            os.environ.setdefault(key.strip(), value)
+
+
+_load_dotenv()
+
+
 def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default)
 

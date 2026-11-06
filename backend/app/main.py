@@ -58,8 +58,9 @@ def health() -> dict:
         from app.db import engine
         with engine.connect() as conn:
             conn.execute(text("select 1"))
-    except Exception:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         db_ok = False
+        logging.getLogger("jobmate").error("database check failed: %s", type(exc).__name__ + ": " + str(exc)[:200])
     return {"status": "ok" if db_ok and intel.name != "unavailable" else "degraded", "database": db_ok,
             "intelligence": intel.name, "auth_provider": settings.auth_provider,
             "llm_model": settings.llm_model if intel.name == "llm" else None}

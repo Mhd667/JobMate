@@ -11,7 +11,7 @@ from sqlalchemy.pool import NullPool
 
 # Serverless (Vercel) + Supabase pooler: no client-side pool, no prepared statements.
 engine = create_engine(settings.database_url, poolclass=NullPool, future=True,
-                       connect_args={"prepare_threshold": None})
+                       connect_args={"prepare_threshold": None, "connect_timeout": 10})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
