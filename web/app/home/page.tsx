@@ -10,7 +10,7 @@ import * as I from "@/components/Icons";
 
 const HELLO_SUB = {
   employer: "Votre agence de recrutement IA. Dites-moi qui vous cherchez, et je m'occupe du reste.",
-  candidate: "Dites-moi quel emploi vous cherchez. Je construis votre profil et je vous propose des offres qui vous correspondent.",
+  candidate: "Parlez-moi de vous et de ce que vous cherchez. Je vous préviens ici dès qu'une offre vous correspond.",
 };
 
 interface Failure { text: string; retry?: () => void }
@@ -247,7 +247,7 @@ export default function Chat() {
           draft={draft}
           onSend={send}
           placeholder={showHello
-            ? (isEmployer ? "Dites-moi votre besoin de recrutement…" : "Dites-moi ce que vous recherchez…")
+            ? (isEmployer ? "Dites-moi votre besoin de recrutement…" : "Présentez-vous en quelques mots…")
             : "Répondez à JobMate…"}
           onAttach={!isEmployer ? attachCv : undefined}
           attachLabel={!isEmployer ? "Ajouter mon CV" : undefined}

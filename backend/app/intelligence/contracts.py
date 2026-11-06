@@ -192,7 +192,7 @@ class RecommendationContext(_M):
 
 
 # =========================================================================== outputs
-EmployerIntent = Literal["inform", "request_success_model", "request_matching", "request_shortlist",
+EmployerIntent = Literal["inform", "start_search", "request_success_model", "request_matching", "request_shortlist",
                          "request_confrontation", "request_recommendation", "smalltalk"]
 CandidateIntent = Literal["inform", "request_opportunities", "smalltalk"]
 
@@ -275,6 +275,8 @@ class CandidateTurnOutput(_M):
     intent: CandidateIntent = "inform"
     professional_identity_patch: ProfessionalIdentityPatch = Field(default_factory=ProfessionalIdentityPatch)
     asked_field: str | None = None
+    show_sources_card: bool = Field(
+        False, description="true only if the candidate wants to share a CV, LinkedIn or portfolio now")
 
 
 class SuccessModelDraft(_M):

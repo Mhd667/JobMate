@@ -27,28 +27,24 @@ def test_employer_and_candidate_journeys(demo):
     assert conv["role_id"] and conv["messages"][0]["content"].startswith("Bonjour, je suis JobMate")
     cid = conv["id"]
 
+    # Conversation first: missions are given in natural language, no checkbox card by default.
     _send(client, emp, cid, "Notre commerciale part en congé maternité, poste vacant 6 mois.")
-    turn = _send(client, emp, cid, "Garder nos commerçants actifs et en signer de nouveaux.")
-    missions = _card(turn, "missions")
-    assert turn["flow_state"] == "missions" and missions["data"]["options"]
-
-    turn = _act(client, emp, cid, missions, "missions.submit", {"selected": missions["data"]["options"][:2],
-                                                                "other": "Relances"})
-    assert turn["user_message"]["content"].startswith("Missions principales")
-    # the missions card is closed in the history
-    hist = client.get(f"/conversations/{cid}", headers=emp).json()["messages"]
-    assert any(c["status"] == "done" for msg in hist for c in msg["meta"].get("cards", []))
-
+    _send(client, emp, cid, "Garder nos commerçants actifs et en signer de nouveaux.")
+    turn = _send(client, emp, cid, "Prospection, relances et gestion des réclamations.")
+    assert not any(c["type"] == "missions" for c in turn["cards"])
     turn = _send(client, emp, cid, "Les meilleurs restent calmes face à un commerçant en colère et savent convaincre.")
     for _ in range(3):  # languages, availability... until the summary appears
         if turn["cards"]:
             break
         turn = _send(client, emp, cid, "Français et wolof, dès que possible.")
     summary = _card(turn, "role_summary")
-    assert "Relances" in summary["data"]["missions"] and summary["data"]["criteria"]
+    assert any("relances" in x for x in summary["data"]["missions"]) and summary["data"]["criteria"]
 
-    turn = _act(client, emp, cid, summary, "role_summary.confirm")
+    # The search can be started in words as well as with the card's button.
+    turn = _send(client, emp, cid, "C'est bon, lance la recherche.")
     assert turn["flow_state"] == "results"
+    hist = client.get(f"/conversations/{cid}", headers=emp).json()["messages"]
+    assert all(c["status"] == "done" for msg in hist for c in msg["meta"].get("cards", []) if c["type"] == "role_summary")
     cands = _card(turn, "candidates")["data"]["candidates"]
     _card(turn, "success_model")
     panel = _card(turn, "next_steps")
@@ -85,6 +81,9 @@ def test_employer_and_candidate_journeys(demo):
     assert _card(turn, "assessment")["data"]["index"] == 2
     turn = _send(client, ch, detail["id"], "Je commence par comprendre son activité, puis je montre ce qu'il gagne.")
     assert turn["flow_state"] == "waiting" and not turn["cards"]
+    assert "en attente" in turn["assistant_message"]["content"]
+    emp_hist = client.get(f"/conversations/{cid}", headers=emp).json()["messages"]
+    assert any(msg["meta"].get("intent") == "candidate_update" for msg in emp_hist)
     prof = client.get("/candidates/me", headers=ch).json()
     assert all(e["epistemic_status"] != "fact" for e in prof["evidence"] if e["source"] == "assessment")
 
@@ -98,10 +97,15 @@ def test_candidate_sources_card_and_cv_upload(demo):
     conv = client.post("/conversations", headers=h, json={"kind": "candidate"}).json()
     _send(client, h, conv["id"], "Je cherche un poste de commerciale en fintech à Dakar.")
     turn = _send(client, h, conv["id"], "Je sais convaincre et je reste calme avec les clients difficiles.")
+    assert not turn["cards"]  # no card pushed: sources are optional and offered in words
+    turn = _send(client, h, conv["id"], "Voici mon profil : https://www.linkedin.com/in/awa-mbaye")
+    assert turn["updates"][-1]["entity"] == "candidate_sources"
+    turn = _send(client, h, conv["id"], "Je veux bien ajouter mon CV.")
     src = _card(turn, "sources")
     assert client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "javascript:x"}).status_code == 422
     r = client.post("/candidates/me/sources", headers=h, json={"kind": "linkedin", "url": "https://linkedin.com/in/awa"})
-    assert r.status_code == 200 and r.json()["sources"][0]["verified"] is False
+    assert r.status_code == 200 and all(x["verified"] is False for x in r.json()["sources"])
+    assert any("awa-mbaye" in x["url"] for x in r.json()["sources"]) is False  # replaced by the new LinkedIn link
     cv = ("Awa Mbaye, commerciale terrain chez Wave (2022-2025). Ouverture de 120 comptes marchands, "
           "gestion des réclamations, formation des agents.").encode()
     r = client.post("/candidates/me/cv", headers=h, files={"file": ("cv.txt", cv, "text/plain")})

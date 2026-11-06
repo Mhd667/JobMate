@@ -81,6 +81,8 @@ LIST_FIELDS = {"values", "responsibilities", "objectives", "constraints", "stake
 
 def employer_intent(msg: str) -> c.EmployerIntent:
     t = norm(msg)
+    if re.search(r"lance[rz]? la recherche|cherche[rz]? (des|les) profils|c.est bon,? vas", t):
+        return "start_search"
     if re.search(r"compar|confront|departag", t):
         return "request_confrontation"
     if "recommand" in t or "qui recruter" in t or "qui choisir" in t:
@@ -179,7 +181,7 @@ class HeuristicIntelligence:
         role_missing = [f for f in missing if f.startswith("role.")]
         if role_missing:
             nxt = role_missing[0]
-            if nxt == "role.responsibilities":
+            if nxt == "role.responsibilities" and re.search(r"sugg|propos|je ne sais pas|aucune idee", norm(msg)):
                 # Deterministic baseline: generic options; the LLM proposes options adapted to the role.
                 return c.EmployerTurnOutput(
                     reply=ack + "Pour bien cibler la recherche, cochez les missions principales du poste.",
@@ -204,8 +206,11 @@ class HeuristicIntelligence:
         if re.search(r"offre|opportunit|poste ouvert|annonce", norm(msg)):
             return c.CandidateTurnOutput(reply="Voici les opportunités qui correspondent à votre profil.",
                                          intent="request_opportunities")
+        wants_sources = bool(re.search(r"(ajouter|envoyer|partager).{0,20}(cv|linkedin|portfolio)", norm(msg)))
         patch: dict = {}
-        if ctx.last_asked_field and len(msg) > 3:
+        if wants_sources:
+            pass
+        elif ctx.last_asked_field and len(msg) > 3:
             patch = _fill(ctx.last_asked_field, msg)
         elif len(msg) > 3:
             patch = {"summary": msg}
@@ -213,9 +218,9 @@ class HeuristicIntelligence:
         if missing:
             return c.CandidateTurnOutput(reply=("Merci. " if patch else "") + CANDIDATE_Q.get(missing[0], "Dites-m'en plus ?"),
                                          professional_identity_patch=c.ProfessionalIdentityPatch(**patch),
-                                         asked_field=missing[0])
-        return c.CandidateTurnOutput(reply="Merci, votre identité professionnelle est bien construite. "
-                                           "Voulez-vous voir les opportunités qui vous correspondent ?",
+                                         asked_field=missing[0], show_sources_card=wants_sources)
+        return c.CandidateTurnOutput(reply="Merci, votre profil est prêt. Je vous préviens ici dès qu'une offre "
+                                           "vous correspond.", show_sources_card=wants_sources,
                                      professional_identity_patch=c.ProfessionalIdentityPatch(**patch))
 
     # ------------------------------------------------------------------ success model

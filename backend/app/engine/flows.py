@@ -11,6 +11,7 @@ Humans decide: Passer / Entretien / Hire only record the employer's decision.
 """
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 
@@ -56,15 +57,19 @@ def _turn(user_msg, assistant, intent, updates=None, artifacts=None, conv=None) 
 SINGLE_OPEN = {"missions", "role_summary", "sources"}
 
 
+def _close_open(db: Session, conv: m.Conversation, types: set[str], result: str = "superseded") -> None:
+    for msg in db.scalars(select(m.Message).where(m.Message.conversation_id == conv.id,
+                                                  m.Message.sender == "assistant")):
+        for cd in (msg.meta or {}).get("cards", []):
+            if cd["type"] in types and cd["status"] == "open":
+                close_card(msg, cd["id"], {"action": result})
+
+
 def _assistant(db, conv, text, cards=None, **meta) -> m.Message:
     # A new missions / role summary card replaces the previous unanswered one.
     fresh = {cd["type"] for cd in (cards or [])} & SINGLE_OPEN
     if fresh:
-        for msg in db.scalars(select(m.Message).where(m.Message.conversation_id == conv.id,
-                                                      m.Message.sender == "assistant")):
-            for cd in (msg.meta or {}).get("cards", []):
-                if cd["type"] in fresh and cd["status"] == "open":
-                    close_card(msg, cd["id"], {"action": "superseded"})
+        _close_open(db, conv, fresh)
     return _post(db, conv, "assistant", text, {**meta, "cards": cards or []})
 
 
@@ -174,9 +179,22 @@ def employer_message(db: Session, conv: m.Conversation, content: str) -> dict:
 def _employer_intent(db, conv, user_msg, intent, content, updates) -> dict:
     rid = conv.role_id
     cb = ContextBuilder(db)
+    if intent in ("start_search", "request_matching", "request_shortlist"):
+        role_view = cb.role(rid)
+        if not cb.role_ready(role_view):
+            missing = [f.split(".", 1)[1] for f in cb.missing_company_role_fields(cb.company(conv.company_id), role_view)
+                       if f.startswith("role.") and f.split(".", 1)[1] in ("mission", "responsibilities", "success_factors")]
+            labels = {"mission": "la mission du poste", "responsibilities": "les missions principales",
+                      "success_factors": "ce qui fait réussir dans ce poste"}
+            assistant = _assistant(db, conv, "Je lance la recherche dès que j'en sais un peu plus sur "
+                                   + " et ".join(labels[f] for f in missing) + ". Pouvez-vous me le décrire ?",
+                                   intent=intent)
+            return _turn(user_msg, assistant, intent, updates, conv=conv)
+        _close_open(db, conv, {"role_summary", "missions"})
+        return _search(db, conv, user_msg, intent)
     if cb.role(rid).success_model is None and intent != "request_success_model":
-        assistant = _assistant(db, conv, "Je dois d'abord lancer la recherche sur ce poste. Validez le récapitulatif "
-                                         "du poste et je vous présenterai les meilleurs profils.", intent=intent)
+        assistant = _assistant(db, conv, "Je n'ai pas encore cherché de profils pour ce poste. Dites-moi quand "
+                                         "lancer la recherche.", intent=intent)
         return _turn(user_msg, assistant, intent, updates, conv=conv)
     artifacts, cards = [], []
     if intent == "request_success_model":
@@ -184,8 +202,6 @@ def _employer_intent(db, conv, user_msg, intent, content, updates) -> dict:
         artifacts.append({"type": "success_model", "id": str(sm.id), "version": sm.version})
         cards.append(k.success_model_card(sm))
         text = "Voici ce qui fera réussir la personne dans ce poste."
-    elif intent in ("request_matching", "request_shortlist"):
-        return _search(db, conv, user_msg, intent)
     elif intent == "request_confrontation":
         cf = p.confront(db, rid, content)
         artifacts.append({"type": "confrontation", "id": str(cf.id)})
@@ -251,12 +267,31 @@ def push_offers(db: Session, matches: list[m.Match]) -> None:
         if conv is None:
             continue
         x.offered_at, x.candidate_status = datetime.now(timezone.utc), "offered"
-        _assistant(db, conv, "Une nouvelle opportunité correspond à votre profil.", [k.offer_card(db, x)],
-                   intent="offer")
+        role = db.get(m.Role, x.role_id)
+        company = db.get(m.Company, role.company_id)
+        text = (f"Bonne nouvelle ! {company.name} recrute pour un poste qui correspond à ce que vous cherchez : "
+                f"{role.title}. Je vous ai mis l'offre ci-dessous. Est-ce qu'elle vous intéresse ?")
+        _assistant(db, conv, text, [k.offer_card(db, x)], intent="offer")
     db.flush()
 
 
+def _notify_employer(db: Session, role_id, candidate_id) -> None:
+    conv = db.scalars(select(m.Conversation).where(m.Conversation.role_id == role_id,
+                                                   m.Conversation.kind == m.ConversationKind.employer)
+                      .order_by(m.Conversation.created_at.desc())).first()
+    if conv is None:
+        return
+    name = db.get(m.Candidate, candidate_id).full_name
+    x = db.scalars(select(m.Match).where(m.Match.role_id == role_id, m.Match.candidate_id == candidate_id)).first()
+    score = f" Sa correspondance est maintenant de {x.ui_score} %." if x and x.ui_score is not None else ""
+    _assistant(db, conv, f"{name} est intéressé(e) par le poste et a répondu à l'évaluation.{score} "
+                         "Demandez-moi son analyse ou une confrontation des finalistes quand vous voulez.",
+               intent="candidate_update")
+
+
 def _notify_candidate(db: Session, match: m.Match, text: str) -> None:
+    if match.offered_at is None:  # the candidate never heard of this role: nothing to report
+        return
     conv = _candidate_conversation(db, db.get(m.Candidate, match.candidate_id))
     if conv is not None:
         _assistant(db, conv, text, intent="employer_update")
@@ -288,15 +323,38 @@ def candidate_message(db: Session, conv: m.Conversation, content: str) -> dict:
                 epistemic_status="hypothesis", confidence=0.3) for s in patch["strengths"]])
     _set_state(conv, asked_field=turn.asked_field)
     cards = []
-    ident = current(db, m.ProfessionalIdentity, conv.candidate_id)
-    if not conv.state.get("sources_offered") and ident and ident.career_direction and ident.strengths:
+    links = _save_links(db, conv.candidate_id, content)
+    if links:
+        updates.append({"entity": "candidate_sources", "added": links})
+    elif turn.show_sources_card:
         cards.append(k.sources_card())
-        _set_state(conv, sources_offered=True, flow="sources")
+        _set_state(conv, flow="sources")
     artifacts = []
     if turn.intent == "request_opportunities":
         artifacts.append({"type": "opportunities", "candidate_id": str(conv.candidate_id)})
     assistant = _assistant(db, conv, turn.reply, cards, intent=turn.intent, updates=updates, produced_by=producer)
     return _turn(user_msg, assistant, turn.intent, updates, artifacts, conv)
+
+
+_URL = re.compile(r"(https?://[^\s<>\"']+|(?:www\.)?linkedin\.com/[^\s<>\"']+)", re.I)
+
+
+def _save_links(db: Session, candidate_id, text: str) -> list[dict]:
+    """Links pasted in the chat are kept as unverified sources (never scraped)."""
+    found = []
+    for raw in _URL.findall(text or ""):
+        url = raw.rstrip(".,;)")
+        url = url if url.lower().startswith("http") else f"https://{url}"
+        found.append({"kind": "linkedin" if "linkedin.com" in url.lower() else "portfolio", "url": url[:500],
+                      "added_at": datetime.now(timezone.utc).isoformat(), "verified": False})
+    if not found:
+        return []
+    cand = db.get(m.Candidate, candidate_id)
+    known = {x.get("url") for x in cand.sources or []}
+    new = [f for f in found if f["url"] not in known]
+    cand.sources = (cand.sources or []) + new
+    flag_modified(cand, "sources")
+    return new
 
 
 def _theme(db: Session, req: m.AssessmentRequest) -> str:
@@ -323,9 +381,11 @@ def _answer_assessment(db: Session, conv: m.Conversation, content: str, pending:
     else:
         _set_state(conv, assessment=None, flow="waiting")
         p.run_matching(db, role_id, [conv.candidate_id])
-        assistant = _assistant(db, conv, "Merci, c'est terminé. Vos réponses ont été ajoutées à votre profil et "
-                                         "transmises avec votre candidature. Je vous tiens informé de la suite.",
+        assistant = _assistant(db, conv, "Merci, c'est terminé. Vos réponses ont été transmises avec votre "
+                                         "candidature, qui est maintenant en attente du retour de l'employeur. "
+                                         "Je reviens vers vous ici dès qu'il y a du nouveau.",
                                intent="assessment_done")
+        _notify_employer(db, role_id, conv.candidate_id)
     return _turn(user_msg, assistant, "assessment_answer", updates, conv=conv)
 
 
@@ -393,7 +453,11 @@ def _employer_action(db, conv, msg, cd, action, payload) -> dict:
         text = {"pass": f"C'est noté, {name} est écarté(e) pour ce poste.",
                 "interview": f"C'est noté. J'informe {name} que vous souhaitez un entretien.",
                 "hire": f"C'est noté : vous avez choisi {name}. Je l'informe de votre décision."}[decision]
-        if decision == "interview":
+        if decision == "pass":
+            _notify_candidate(db, x, f"Merci pour votre intérêt pour le poste « {db.get(m.Role, x.role_id).title} ». "
+                                     "L'entreprise a choisi de poursuivre avec d'autres profils. Votre profil reste "
+                                     "actif : je vous préviens dès qu'une autre offre vous correspond.")
+        elif decision == "interview":
             _notify_candidate(db, x, f"Bonne nouvelle : l'employeur du poste « {db.get(m.Role, x.role_id).title} » "
                                      "souhaite vous rencontrer en entretien.")
         elif decision == "hire":

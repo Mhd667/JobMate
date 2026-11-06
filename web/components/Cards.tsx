@@ -109,6 +109,9 @@ function RoleSummary({ card, act, busy }: Props) {
             }}>Lancer la recherche</button>
           </div>
         )}
+        {card.status === "open" && !searching && (
+          <p className="sub" style={{ marginTop: 10 }}>Vous pouvez aussi corriger la synthèse en me répondant dans le chat.</p>
+        )}
         {result === "role_summary.confirm" && <Done text="Synthèse validée" />}
         {result === "role_summary.edit" && <Done text="Modification demandée" />}
       </section>

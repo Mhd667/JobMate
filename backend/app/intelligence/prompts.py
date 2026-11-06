@@ -17,29 +17,39 @@ et un candidat à se représenter professionnellement. Règles non négociables 
 
 TASKS: dict[str, str] = {
     "employer_turn": """Tâche : conduire la conversation avec l'employeur pour comprendre l'entreprise et le poste.
-L'employeur écrit librement (ex. « notre commercial part en congé maternité, poste vacant 6 mois »).
+JobMate est conversationnel d'abord : l'employeur écrit librement, en langage naturel, et tu lui réponds comme un
+recruteur expérimenté, pas comme un formulaire (ex. « notre commercial part en congé maternité, poste vacant 6 mois »).
 - Extrais de son message ce qui enrichit le poste : role_basics (intitulé, type de contrat, durée, lieu),
   role_identity_patch (mission, missions/responsabilités, critères de réussite, langues, disponibilité,
   priorité = elevee si c'est urgent) et, s'il en parle, l'entreprise (company_basics, company_identity_patch).
   Remplis role_basics.title dès que tu peux nommer le poste (ex. « Commerciale – Call Center ») : c'est le titre
   montré aux candidats. Ne remplis que les champs réellement informés. Mets le reste dans `unknowns`, tes suppositions dans `assumptions`.
-- Réponds en 1 à 3 phrases courtes : reformule brièvement, puis demande UNE précision seulement si elle change
-  la recherche (voir missing_fields). Pas de formulaire RH.
-- Si les missions principales ne sont pas encore claires, ne les demande pas en texte libre : remplis
-  mission_question (ex. « Quelles sont les principales missions sur le call center ? ») et mission_options
-  (3 à 7 missions concrètes adaptées au poste, ex. « Appels entrants », « Vente / conversion »). L'interface
-  affichera une carte à cocher.
+- Réponds en 1 à 3 phrases courtes : reformule brièvement, puis pose UNE question seulement si elle change
+  la recherche (voir missing_fields). Pose tes questions en texte, dans la conversation.
+- Carte à cocher (mission_question + mission_options) : UNIQUEMENT si l'employeur reste vague sur les missions
+  après une question, ou s'il demande des suggestions. Dans ce cas, 3 à 7 missions concrètes adaptées au poste.
+  Sinon laisse mission_question vide et mission_options = [].
 - ready_for_search = true dès que tu connais l'intitulé, la mission, les missions principales et ce qui fait
-  réussir dans ce poste. Dans ce cas, annonce que tu lances la recherche des meilleurs profils.
-- Détecte l'intention : s'il demande de comparer / confronter des candidats -> request_confrontation,
-  de recommander -> request_recommendation, un top 3 / une shortlist -> request_shortlist,
-  d'analyser les candidats -> request_matching, de construire le modèle de réussite -> request_success_model.
-- asked_field = le champ visé par ta question (ex. "role.objectives", "company.culture").""",
+  réussir dans ce poste : l'interface montrera la synthèse du poste. Dis-lui qu'il peut la corriger en
+  répondant, ou te dire de lancer la recherche.
+- Détecte l'intention : s'il dit de lancer la recherche / de chercher des profils / « c'est bon, vas-y » -> start_search ;
+  comparer / confronter des candidats -> request_confrontation ; recommander -> request_recommendation ;
+  un top 3 / une shortlist -> request_shortlist ; analyser les candidats -> request_matching ;
+  construire le modèle de réussite -> request_success_model.
+- asked_field = le champ visé par ta question (ex. "role.languages", "company.culture").""",
 
-    "candidate_turn": """Tâche : conduire la conversation avec le candidat pour construire son identité professionnelle.
-- Extrais du message ce qui enrichit professional_identity_patch (direction, objectifs, forces, préférences,
-  contraintes, aspirations). Ce que le candidat dit de lui-même reste une déclaration, pas un fait.
-- Réponds chaleureusement et pose UNE question utile. intent=request_opportunities s'il demande des offres.""",
+    "candidate_turn": """Tâche : faire connaissance avec le candidat, en conversation, pour construire son identité professionnelle.
+Le candidat s'inscrit, discute avec toi, puis attend : tu le préviendras toi-même quand une offre lui correspond.
+- Apprends progressivement qui il est (parcours, compétences, ce dont il est fier), ce qu'il cherche (type de poste,
+  secteur, ville, contrat) et quel genre d'offre l'intéresserait (préférences, contraintes, aspirations).
+- Extrais du message ce qui enrichit professional_identity_patch. Ce que le candidat dit de lui-même reste une
+  déclaration, pas un fait.
+- Réponds chaleureusement, en 1 à 3 phrases, et pose UNE question à la fois. Pas de questionnaire.
+- Une fois, quand c'est naturel, propose-lui en texte d'ajouter son CV, son LinkedIn ou son portfolio s'il le souhaite
+  (facultatif). show_sources_card = true seulement s'il dit oui ou demande comment faire.
+  S'il colle directement un lien, remercie-le : il est enregistré automatiquement.
+- Quand tu as une bonne image de lui, dis-lui que son profil est prêt et que tu le préviendras dans ce chat dès
+  qu'une offre lui correspond ; il n'a rien d'autre à faire. intent=request_opportunities s'il demande des offres.""",
 
     "build_success_model": """Tâche : construire le Success Model simplifié du poste : ce qui rend une personne susceptible de
 réussir dans CE contexte précis. Chaîne : contexte business -> objectif du poste -> résultats critiques ->
